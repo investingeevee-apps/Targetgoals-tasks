@@ -68,6 +68,27 @@ Pairing is stored on the device; the app re-syncs automatically on launch, every
 
 ---
 
+## Home-screen widget
+
+A read-only widget (`TargetGoalsDaily`) shows your **streak**, **today's progress**,
+and **today's habit list**; tapping it opens the app. It reads straight from the app's
+local cache, so it works offline and refreshes after you toggle habits (and on
+Android's periodic update).
+
+> **The widget needs a real build — it does NOT run in Expo Go.** The widget library
+> (`react-native-android-widget`) relies on a native module that Expo Go doesn't
+> include. The app is coded to **detect Expo Go and skip the widget**, so the app
+> still runs fine in Expo Go — you just won't see the widget there. To use it, install
+> a **dev or preview build**:
+>
+> ```bash
+> cd apps/mobile
+> npx eas-cli build -p android --profile preview   # or: development
+> ```
+>
+> Install that APK, then long-press your home screen → **Widgets** → **TargetGoals
+> Tasks** → drag **TargetGoals Daily** onto the screen.
+
 ## Notes & limitations
 
 - Local data is cached with **AsyncStorage** (small dataset; `expo-sqlite` is a

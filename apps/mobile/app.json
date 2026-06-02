@@ -17,6 +17,24 @@
         {
           "cameraPermission": "Allow TargetGoals Tasks to use the camera to scan your server's pairing QR code."
         }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "TargetGoalsDaily",
+              "label": "TargetGoals Daily",
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 3,
+              "targetCellHeight": 2,
+              "description": "Today's habits, streak, and progress",
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
+            }
+          ]
+        }
       ]
     ],
     "extra": {

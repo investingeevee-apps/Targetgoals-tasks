@@ -2,8 +2,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { AppState } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import Constants from 'expo-constants'
 import { useStore } from '../store'
 import { normalizeUrl, postSync, verifyConnection } from './api'
+
+const inExpoGo = Constants.executionEnvironment === 'storeClient'
+
+/** Refresh the home-screen widget, lazily and only where the native module exists. */
+function refreshWidget(): void {
+  if (inExpoGo) return
+  import('../widget/handler')
+    .then((m) => m.updateDailyWidget())
+    .catch(() => {})
+}
 
 export type SyncStatus = 'disconnected' | 'connecting' | 'idle' | 'syncing' | 'error'
 
@@ -89,10 +100,19 @@ export function initSync(): void {
   }
 
   let prevDirty = Object.keys(useStore.getState().dirty).length
+  let prevDaily = useStore.getState().dailyTasks
+  let prevCompletions = useStore.getState().dailyCompletions
   useStore.subscribe((state) => {
     const count = Object.keys(state.dirty).length
     if (count > prevDirty) schedule(800)
     prevDirty = count
+
+    // refresh the home-screen widget when today's habit data changes
+    if (state.dailyTasks !== prevDaily || state.dailyCompletions !== prevCompletions) {
+      prevDaily = state.dailyTasks
+      prevCompletions = state.dailyCompletions
+      refreshWidget()
+    }
   })
 
   setInterval(() => void useSync.getState().syncNow(), 25_000)

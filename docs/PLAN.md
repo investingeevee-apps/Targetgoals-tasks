@@ -300,8 +300,11 @@ under Android Doze; no server push needed):
   offline-first sync engine, **QR pairing** (+ manual), and celebrations. Typechecks
   clean. *Device run + APK via EAS happen on the user's machine — see
   `docs/ANDROID.md`.* ✅ *(deviation: AsyncStorage instead of expo-sqlite for v1.)*
-- [ ] **Phase F — Widget.** `react-native-android-widget` (two sizes), WorkManager
-  refresh, tap‑to‑open.
+- [x] **Phase F — Widget.** Read-only home-screen widget (`react-native-android-widget`):
+  streak + today's progress + today's habit list, tap-to-open, refreshes on habit
+  changes + Android's periodic update. **Guarded** so the app still runs in Expo Go
+  (widget skipped there); it only appears in a dev/preview/production build. Typechecks
+  + bundles clean. *Widget itself unverifiable without an EAS build — see docs/ANDROID.md.* ✅
 - [ ] **Phase G — Notifications.** Daily reminder + streak‑at‑risk (local schedule),
   Settings controls.
 - [ ] **Phase H — Build & release.** Keystore, EAS/Gradle APK, GitHub Releases, CI,
