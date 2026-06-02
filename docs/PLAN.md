@@ -288,8 +288,9 @@ under Android Doze; no server push needed):
   deleted tombstones), offline-first sync engine (push+pull, debounced on edit +
   25 s timer + on reconnect), connection UI with status, and one-time legacy import.
   Verified bidirectional sync end-to-end. ✅
-  - [ ] **C.1 — PWA installability** (manifest + service worker via `vite-plugin-pwa`)
-    so the web app can be added to a phone home screen. *Deferred from C.*
+  - [x] **C.1 — PWA installability** (manifest + service worker via `vite-plugin-pwa`,
+    `autoUpdate`, offline precache + SPA fallback, maskable icon) so the web app can be
+    added to a phone home screen. ✅
 - [ ] **Phase D — Windows service + Tailscale.** Auto‑start service scripts; docs
   for joining the tailnet and finding the server URL.
 - [ ] **Phase E — Android app.** Expo app: Daily + Overview, expo‑sqlite cache,
