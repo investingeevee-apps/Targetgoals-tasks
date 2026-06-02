@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    name: Build & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Installs all workspaces; the root postinstall builds @targetgoals/shared.
+      - run: npm ci
+
+      - name: Build web (also builds shared)
+        run: npm run build
+
+      - name: Typecheck server
+        run: npm run typecheck:server
+
+      - name: Typecheck mobile
+        run: npm run typecheck -w @targetgoals/mobile

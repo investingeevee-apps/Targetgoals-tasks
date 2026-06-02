@@ -310,8 +310,10 @@ under Android Doze; no server push needed):
   from the local cache and **rescheduled on every habit change + app foreground**, so
   the daily reminder is skipped once today is complete and the streak warning only
   fires while a streak is genuinely at risk. ✅
-- [ ] **Phase H — Build & release.** Keystore, EAS/Gradle APK, GitHub Releases, CI,
-  self‑hosting README.
+- [x] **Phase H — Build & release.** GitHub Actions: `ci.yml` (build + typecheck web/
+  server/mobile on push/PR) and `release-android.yml` (on a `v*` tag: EAS builds the
+  APK and attaches it to the GitHub Release; manual runs upload it as an artifact).
+  EAS-managed keystore; `EXPO_TOKEN` secret. Docs in `docs/RELEASING.md`. ✅
 - [ ] **Later — Android task lists** (parity with web), Wake‑on‑LAN, optional
   multi‑user.
 

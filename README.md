@@ -28,8 +28,11 @@ account, and no data leaves your machine.
 ## Android app
 
 `apps/mobile` is an Expo / React Native app (Daily + Overview, offline-first, QR
-pairing) that syncs with your server. Quick run: `npm run dev:mobile` then scan with
-**Expo Go**. Build a sideloadable APK with EAS — see **[docs/ANDROID.md](docs/ANDROID.md)**.
+pairing, home-screen widget, local reminders) that syncs with your server. Quick run:
+`npm run dev:mobile` then scan with **Expo Go**. Build a sideloadable APK with EAS — see
+**[docs/ANDROID.md](docs/ANDROID.md)**. Releases are automated via GitHub Actions
+(**[docs/RELEASING.md](docs/RELEASING.md)**): push a `v*` tag and the APK is built on EAS
+and attached to the GitHub Release.
 
 ## Tech stack
 

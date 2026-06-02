@@ -9,7 +9,11 @@
     "backgroundColor": "#0b1220",
     "android": {
       "package": "com.targetgoals.tasks",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       [
@@ -38,7 +42,10 @@
       ]
     ],
     "extra": {
-      "eas": {}
-    }
+      "eas": {
+        "projectId": "6f90eccc-4125-4230-b256-9efe5cdab72f"
+      }
+    },
+    "owner": "deveevee"
   }
 }
