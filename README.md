@@ -1,4 +1,4 @@
-# Tally
+# TargetGoals Tasks
 
 A local-first, open-source task manager inspired by Google Tasks — with a twist:
 a **daily tasks** list that resets every day and tracks your completions over time
@@ -20,6 +20,8 @@ account, and no data leaves your machine.
   forever.
 - **Overview dashboard** — total completions, active days, current & longest
   streaks, daily average, best day, and a GitHub/Claude-style activity heatmap.
+- **Hot streak popups** — a celebration when you log your first daily task of
+  the day, and a bigger confetti moment when you complete *all* of them.
 - **Local & private** — all data persists in `localStorage`. Export is as simple
   as copying the `tally-store-v1` key.
 
@@ -84,12 +86,12 @@ This repo is initialized locally. To publish it:
 
 ```bash
 # create a repo on github.com, then:
-git remote add origin https://github.com/<you>/tally.git
+git remote add origin https://github.com/<you>/targetgoals-tasks.git
 git branch -M main
 git push -u origin main
 ```
 
-Or with the GitHub CLI: `gh repo create tally --public --source=. --push`.
+Or with the GitHub CLI: `gh repo create targetgoals-tasks --public --source=. --push`.
 
 ## License
 

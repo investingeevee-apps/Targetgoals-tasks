@@ -39,3 +39,14 @@ export interface DailyTask {
 export type DailyLog = Record<string, ID[]>
 
 export type Screen = 'tasks' | 'daily' | 'overview'
+
+/**
+ * A transient celebration event surfaced as a popup. Not persisted.
+ * - `logged`: the user completed their FIRST daily task of the day.
+ * - `allDone`: the user completed ALL of their daily tasks for the day.
+ */
+export interface Celebration {
+  kind: 'logged' | 'allDone'
+  streak: number
+  total: number
+}

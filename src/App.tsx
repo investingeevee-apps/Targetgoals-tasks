@@ -4,6 +4,7 @@ import { TasksScreen } from './components/TasksScreen'
 import { DailyScreen } from './components/DailyScreen'
 import { OverviewScreen } from './components/OverviewScreen'
 import { TaskDetail } from './components/TaskDetail'
+import { Celebration } from './components/Celebration'
 
 export default function App() {
   const screen = useStore((s) => s.screen)
@@ -27,6 +28,8 @@ export default function App() {
           <TaskDetail task={selectedTask} />
         )}
       </main>
+
+      <Celebration />
     </div>
   )
 }

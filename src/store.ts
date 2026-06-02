@@ -1,7 +1,16 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { DailyLog, DailyTask, ID, Screen, Task, TaskList } from './types'
+import type {
+  Celebration,
+  DailyLog,
+  DailyTask,
+  ID,
+  Screen,
+  Task,
+  TaskList,
+} from './types'
 import { todayKey } from './lib/dates'
+import { computeStats } from './lib/stats'
 
 function uid(): string {
   // crypto.randomUUID is available in all modern browsers.
@@ -19,6 +28,10 @@ interface State {
   screen: Screen
   currentListId: ID | null
   selectedTaskId: ID | null
+
+  // transient UI (not persisted)
+  celebration: Celebration | null
+  dismissCelebration: () => void
 
   // ---- navigation actions ----
   setScreen: (screen: Screen) => void
@@ -56,7 +69,7 @@ function seed(): Pick<State, 'lists' | 'tasks' | 'dailyTasks' | 'dailyLog'> {
       {
         id: uid(),
         listId,
-        title: 'Welcome to Tally 👋  Click me to add notes & a due date',
+        title: 'Welcome to TargetGoals Tasks 👋  Click me to add notes & a due date',
         notes: '',
         starred: true,
         completed: false,
@@ -90,6 +103,9 @@ export const useStore = create<State>()(
         screen: 'tasks',
         currentListId: initial.lists[0]?.id ?? null,
         selectedTaskId: null,
+        celebration: null,
+
+        dismissCelebration: () => set({ celebration: null }),
 
         // ---- navigation ----
         setScreen: (screen) => set({ screen, selectedTaskId: null }),
@@ -219,13 +235,41 @@ export const useStore = create<State>()(
             const dailyLog = { ...s.dailyLog }
             if (next.length) dailyLog[key] = next
             else delete dailyLog[key]
-            return { dailyLog }
+
+            // Surface a celebration only when completing (not un-checking).
+            let celebration = s.celebration
+            if (!has) {
+              const activeIds = new Set(
+                s.dailyTasks.filter((d) => !d.archived).map((d) => d.id),
+              )
+              const total = activeIds.size
+              const doneActive = next.filter((x) => activeIds.has(x)).length
+              const streak = computeStats(dailyLog).currentStreak
+              if (total > 0 && doneActive === total) {
+                // Completed everything for the day — the big one.
+                celebration = { kind: 'allDone', streak, total }
+              } else if (doneActive === 1) {
+                // First task logged today — hot streak nudge.
+                celebration = { kind: 'logged', streak, total }
+              }
+            }
+
+            return { dailyLog, celebration }
           }),
       }
     },
     {
       name: 'tally-store-v1',
       version: 1,
+      // Persist data + navigation only — never the transient celebration popup.
+      partialize: (s) => ({
+        lists: s.lists,
+        tasks: s.tasks,
+        dailyTasks: s.dailyTasks,
+        dailyLog: s.dailyLog,
+        screen: s.screen,
+        currentListId: s.currentListId,
+      }),
     },
   ),
 )
