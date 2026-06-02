@@ -98,9 +98,11 @@ whenever your habits change — so the daily reminder is skipped once today is d
 the streak warning only fires while a streak is on the line. You'll be asked for
 notification permission the first time they're enabled.
 
-> Local notifications generally work in Expo Go, but Expo has been narrowing
-> notification support there. If they don't fire in Expo Go, they will in a
-> **dev/preview build**.
+> **Notifications run in a dev/preview build, not Expo Go.** Expo Go removed
+> notification support in SDK 53 (and warns on import), so the app **skips loading
+> the notification scheduler in Expo Go** to keep it clean — the Settings toggles
+> still work there, they just take effect once you install a dev/preview build
+> (same `eas build` flow as the widget).
 
 ## Notes & limitations
 
