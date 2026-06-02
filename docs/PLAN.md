@@ -42,7 +42,11 @@ home‑screen widget** show the same tasks, reachable from anywhere over Tailsca
 | Widget | **Read‑only**: glanceable stats **and** today's task list; tap → open app |
 | Notifications | **Daily reminder + streak‑at‑risk** |
 | Server runtime | **Auto‑start Windows background service** |
+| Server host | **Default: your PC**; always‑on host (Pi/mini‑PC) offered as a documented option |
+| Port / HTTPS | **`:4000`** (configurable); recommend **`tailscale serve`** for HTTPS so the web PWA works remotely |
 | Pairing | **QR code** (server shows URL+token, app scans) |
+| APK build | **Expo EAS Build** (cloud; no local Android SDK) |
+| Notifications | Defaults on; **master + per‑type opt‑out toggles** in Settings |
 | Distribution | **Prebuilt signed APK on GitHub Releases + full source** |
 
 ---
@@ -156,12 +160,37 @@ Every row carries:
 
 - Install Tailscale on the PC and the phone; both join your **tailnet**.
 - The server binds to the Tailscale interface; the app uses the PC's Tailscale
-  hostname (e.g. `http://your‑pc.tailnet‑name.ts.net:4000`) — works on cellular,
-  no router config, encrypted.
+  hostname (e.g. `your‑pc.tailnet‑name.ts.net`) — works on cellular, no router
+  config. The WireGuard tunnel encrypts all traffic.
 - LAN still works at home automatically.
-- **Constraint:** the PC must be **awake** to sync. Offline‑first means the phone
-  keeps working and reconciles when the PC is next reachable. (Optional later:
-  Wake‑on‑LAN, or host the server on an always‑on mini‑PC/Raspberry Pi.)
+
+### 7.1 Port & HTTPS (the `:4000` decision)
+- **Default port `:4000`**, **configurable** via `.env` (`PORT=`). It's an arbitrary
+  unprivileged port (no admin rights to bind). Startup **checks for a conflict** and
+  prints a clear message if it's already in use.
+- The port is **encoded in the QR**, so clients never type it — but **changing it
+  later requires re‑pairing**.
+- **HTTP vs HTTPS / secure context:**
+  - The **Android app** only calls the JSON API, so plain HTTP **over the encrypted
+    Tailscale tunnel** is fine.
+  - The **web app's PWA/offline features require a "secure context"** = HTTPS *or*
+    `localhost`. So they work at `http://localhost:4000` on the PC, but **not** at a
+    remote `http://…ts.net:4000`.
+  - **Recommended setup:** use **`tailscale serve`** to front the server with a real
+    Let's Encrypt cert → `https://your‑pc.tailnet.ts.net`. Encrypted *and* a secure
+    context everywhere, so the web app is fully functional remotely. The server still
+    listens on `:4000` internally; Tailscale handles TLS on 443.
+  - First Node bind may trigger a **one‑time Windows Firewall allow** prompt
+    (private/Tailscale network).
+
+### 7.2 Where the server runs (user's choice)
+- **Default: on your own computer.** Simplest; works for one main machine.
+- **Option: an always‑on host** (mini‑PC / Raspberry Pi / home server) so it's up
+  24/7 without your main PC. The server is plain Node + SQLite, so it runs anywhere
+  Node runs; the setup guide will cover both. Surfaced as a documented choice during
+  setup, not a code difference.
+- **Constraint:** whichever host you pick must be **awake** to sync. Offline‑first
+  means the phone keeps working and reconciles when the host is next reachable.
 
 ---
 
@@ -208,11 +237,14 @@ Every row carries:
 Use **`expo-notifications`** with **locally scheduled** notifications (reliable
 under Android Doze; no server push needed):
 
-- **Daily reminder:** configurable time (default e.g. 9:00 AM) — "Log your daily
+- **Daily reminder:** configurable time (**default 9:00 AM**) — "Log your daily
   tasks." Skipped if everything's already done.
-- **Streak‑at‑risk:** an evening check (default e.g. 8:00 PM) that fires only if
+- **Streak‑at‑risk:** an evening check (**default 8:00 PM**) that fires only if
   today isn't logged and a streak is on the line.
 - Both computed from the **local cache**, so they work even if the PC is offline.
+- **All notifications are opt‑out.** Settings has a **master "Notifications" toggle**
+  plus **per‑type toggles** (daily reminder / streak‑at‑risk) and **time pickers**.
+  Defaults on; one switch turns everything off.
 - Respect OEM battery‑optimization caveats; surface a one‑time "allow background"
   hint in Settings.
 
@@ -231,9 +263,11 @@ under Android Doze; no server push needed):
 
 ## 13. Build & distribution
 
-- **APK build:** local Gradle (Android SDK on Windows) **or** Expo **EAS Build**
-  (cloud, no local Android SDK needed). EAS is the lower‑friction default.
-- **Signing:** a release keystore kept **out of git** (and in CI secrets).
+- **APK build: Expo EAS Build (locked).** Cloud builds, **no local Android SDK or
+  JDK** needed on Windows. `eas build -p android --profile production` produces the
+  signed APK.
+- **Signing:** EAS manages the release keystore (or supply your own); kept **out of
+  git** (and in CI secrets) either way.
 - **GitHub Releases:** CI builds the signed APK on tag push and attaches it, so
   others can download‑and‑install; source is always available to build their own.
 - **CI (`.github/workflows`):** lint + typecheck + `web` build + `mobile` APK build.
@@ -273,21 +307,30 @@ under Android Doze; no server push needed):
   read‑only widget, and it refreshes immediately after in‑app changes.
 - **Background notification reliability** varies by phone vendor (battery killers);
   we use scheduled local notifications and a setup hint to minimize misses.
-- **Building/signing an APK on Windows** needs JDK + Android SDK, or EAS Build
-  (cloud). EAS chosen as the default to avoid local toolchain pain.
+- **APK builds use EAS** (cloud), so no JDK/Android SDK is required on Windows.
 - **Single‑user assumption** underpins last‑write‑wins sync; revisit before any
   multi‑user feature.
+- **Web PWA over plain HTTP** is non‑secure‑context remotely → use `tailscale serve`
+  HTTPS (see §7.1). Android app is unaffected.
 
 ---
 
-## 16. Open questions to confirm before/while building
+## 16. Resolved decisions & remaining questions
 
-1. **Server port & name** (default `:4000`, hostname via Tailscale) — any preference?
-2. **Reminder default times** (proposed 9:00 AM daily, 8:00 PM streak‑at‑risk).
-3. **EAS Build vs local Gradle** for the APK — comfortable installing the Android
-   SDK locally, or prefer Expo's cloud builds?
-4. **Always‑on hosting** — happy relying on your PC, or eventually move the server
-   to a Raspberry Pi / mini‑PC so it's up 24/7?
-5. **Heatmap/Overview on a small phone screen** — keep the full 18‑week grid or a
+**Resolved (from planning):**
+1. ✅ **APK build:** Expo **EAS Build** (cloud).
+2. ✅ **Server host:** **default = your PC**; always‑on host offered as a documented option.
+3. ✅ **Reminder defaults:** 9:00 AM daily, 8:00 PM streak‑at‑risk — with **opt‑out
+   toggles** (master + per‑type) in Settings.
+4. ✅ **Port `:4000`:** kept as default, **configurable**; recommend **`tailscale
+   serve`** HTTPS so the web app works remotely (Android app fine on HTTP‑over‑Tailscale).
+
+**Still open (can decide during build):**
+1. **HTTPS default?** Make `tailscale serve` HTTPS the *recommended default* in setup
+   docs, or an optional "if you want the web app remotely" add‑on?
+2. **EAS account/keystore:** let EAS auto‑manage the Android keystore, or supply your own?
+3. **Heatmap/Overview on a small phone screen:** keep the full 18‑week grid or a
    compact range on mobile?
+4. **Reminder copy/tone:** plain ("Log your daily tasks") vs the app's hype voice
+   ("🔥 Keep your streak alive!").
 ```
