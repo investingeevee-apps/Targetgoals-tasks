@@ -1,7 +1,7 @@
 ﻿import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { todayKey, formatLongDate } from '@targetgoals/shared'
-import { computeStats } from '@targetgoals/shared'
+import { computeStreaks } from '@targetgoals/shared'
 import { buildDailyLog } from '../lib/transform'
 import { CheckCircle, Circle, Flame, Plus, Trash } from './Icons'
 
@@ -26,7 +26,10 @@ export function DailyScreen() {
   )
   const completedCount = active.filter((d) => doneToday.has(d.id)).length
   const pct = active.length ? Math.round((completedCount / active.length) * 100) : 0
-  const stats = useMemo(() => computeStats(dailyLog), [dailyLog])
+  const streaks = useMemo(
+    () => computeStreaks(allDailyTasks, completions),
+    [allDailyTasks, completions],
+  )
 
   function submit() {
     addDailyTask(draft)
@@ -43,7 +46,7 @@ export function DailyScreen() {
           </div>
           <div className="inline-flex items-center gap-2 rounded-full bg-orange-500/10 px-3 py-1.5 text-sm font-semibold text-orange-400">
             <Flame width={16} height={16} />
-            {stats.currentStreak} day streak
+            {streaks.currentStreak} day streak
           </div>
         </div>
 

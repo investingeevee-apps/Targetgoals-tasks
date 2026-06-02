@@ -1,6 +1,6 @@
 ﻿import { useMemo } from 'react'
 import { useStore } from '../store'
-import { computeStats } from '@targetgoals/shared'
+import { computeStats, computeStreaks } from '@targetgoals/shared'
 import { formatLongDate } from '@targetgoals/shared'
 import { buildDailyLog } from '../lib/transform'
 import { Heatmap } from './Heatmap'
@@ -23,6 +23,10 @@ export function OverviewScreen() {
 
   const dailyLog = useMemo(() => buildDailyLog(completions), [completions])
   const stats = useMemo(() => computeStats(dailyLog), [dailyLog])
+  const streaks = useMemo(
+    () => computeStreaks(dailyTasks, completions),
+    [dailyTasks, completions],
+  )
   const activeHabits = dailyTasks.filter((d) => !d.deleted && !d.archived).length
 
   return (
@@ -47,12 +51,12 @@ export function OverviewScreen() {
         />
         <StatCard
           label="Current streak"
-          value={`${stats.currentStreak}d`}
-          hint={stats.currentStreak > 0 ? 'keep it going' : 'do one today'}
+          value={`${streaks.currentStreak}d`}
+          hint={streaks.currentStreak > 0 ? 'all habits, daily' : 'finish today'}
         />
         <StatCard
           label="Longest streak"
-          value={`${stats.longestStreak}d`}
+          value={`${streaks.longestStreak}d`}
           hint="personal best"
         />
         <StatCard label="Tracked habits" value={String(activeHabits)} hint="active daily tasks" />

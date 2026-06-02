@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native'
-import { computeStats, formatLongDate, todayKey } from '@targetgoals/shared'
+import { computeStreaks, formatLongDate, todayKey } from '@targetgoals/shared'
 import { useStore } from '../store'
 import { buildDailyLog } from '../lib/transform'
 import { colors } from '../theme'
@@ -23,7 +23,10 @@ export function DailyScreen() {
   )
   const completedCount = active.filter((d) => doneToday.has(d.id)).length
   const pct = active.length ? Math.round((completedCount / active.length) * 100) : 0
-  const stats = useMemo(() => computeStats(dailyLog), [dailyLog])
+  const streaks = useMemo(
+    () => computeStreaks(allDailyTasks, completions),
+    [allDailyTasks, completions],
+  )
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -33,7 +36,7 @@ export function DailyScreen() {
           <Text style={styles.subtle}>{formatLongDate(key)}</Text>
         </View>
         <View style={styles.streak}>
-          <Text style={styles.streakText}>🔥 {stats.currentStreak} day streak</Text>
+          <Text style={styles.streakText}>🔥 {streaks.currentStreak} day streak</Text>
         </View>
       </View>
 

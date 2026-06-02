@@ -1,6 +1,12 @@
 import { useMemo } from 'react'
 import { ScrollView, StyleSheet, Text, View } from 'react-native'
-import { buildHeatmap, computeStats, formatLongDate, intensity } from '@targetgoals/shared'
+import {
+  buildHeatmap,
+  computeStats,
+  computeStreaks,
+  formatLongDate,
+  intensity,
+} from '@targetgoals/shared'
 import { useStore } from '../store'
 import { buildDailyLog } from '../lib/transform'
 import { colors, heatLevels } from '../theme'
@@ -21,6 +27,10 @@ export function OverviewScreen() {
 
   const dailyLog = useMemo(() => buildDailyLog(completions), [completions])
   const stats = useMemo(() => computeStats(dailyLog), [dailyLog])
+  const streaks = useMemo(
+    () => computeStreaks(dailyTasks, completions),
+    [dailyTasks, completions],
+  )
   const columns = useMemo(() => buildHeatmap(dailyLog, 16), [dailyLog])
   const max = useMemo(() => {
     let m = 0
@@ -43,8 +53,8 @@ export function OverviewScreen() {
           value={String(stats.activeDays)}
           hint={stats.firstDay ? `since ${formatLongDate(stats.firstDay)}` : 'none yet'}
         />
-        <StatCard label="Current streak" value={`${stats.currentStreak}d`} />
-        <StatCard label="Longest streak" value={`${stats.longestStreak}d`} hint="personal best" />
+        <StatCard label="Current streak" value={`${streaks.currentStreak}d`} />
+        <StatCard label="Longest streak" value={`${streaks.longestStreak}d`} hint="personal best" />
         <StatCard label="Tracked habits" value={String(activeHabits)} />
         <StatCard
           label="Best day"

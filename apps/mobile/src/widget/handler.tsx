@@ -3,7 +3,7 @@ import {
   requestWidgetUpdate,
   type WidgetTaskHandlerProps,
 } from 'react-native-android-widget'
-import { computeStats, todayKey } from '@targetgoals/shared'
+import { computeStreaks, todayKey } from '@targetgoals/shared'
 import type { DailyCompletionDTO, DailyTaskDTO } from '@targetgoals/shared'
 import { buildDailyLog } from '../lib/transform'
 import { TodayWidget, type WidgetData } from './TodayWidget'
@@ -25,7 +25,7 @@ async function readWidgetData(): Promise<WidgetData> {
     const log = buildDailyLog(completions)
     const doneToday = new Set(log[todayKey()] ?? [])
     return {
-      streak: computeStats(log).currentStreak,
+      streak: computeStreaks(dailyTasks, completions).currentStreak,
       done: dailyTasks.filter((d) => doneToday.has(d.id)).length,
       total: dailyTasks.length,
       tasks: dailyTasks.slice(0, 6).map((d) => ({ title: d.title, done: doneToday.has(d.id) })),

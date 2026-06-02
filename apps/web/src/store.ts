@@ -10,10 +10,9 @@ import type {
   SyncChanges,
   TaskDTO,
 } from '@targetgoals/shared'
-import { computeStats, todayKey } from '@targetgoals/shared'
+import { computeStreaks, todayKey } from '@targetgoals/shared'
 import {
   STORE_KEY,
-  buildDailyLog,
   convertLegacy,
   deriveInitialData,
   uid,
@@ -311,7 +310,7 @@ export const useStore = create<State>()(
                   .filter((c) => !c.deleted && c.dateKey === key && activeIds.has(c.dailyTaskId))
                   .map((c) => c.dailyTaskId),
               ).size
-              const streak = computeStats(buildDailyLog(dailyCompletions)).currentStreak
+              const streak = computeStreaks(s.dailyTasks, dailyCompletions).currentStreak
               if (total > 0 && doneActive === total) {
                 celebration = { kind: 'allDone', streak, total }
               } else if (doneActive === 1) {

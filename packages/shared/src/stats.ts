@@ -1,5 +1,6 @@
 import type { DailyLog } from './types'
-import { addDays, dayDiff, todayKey } from './dates'
+import type { DailyCompletionDTO, DailyTaskDTO } from './sync'
+import { addDays, dayDiff, toKey, todayKey } from './dates'
 
 export interface Stats {
   totalCompletions: number
@@ -58,6 +59,74 @@ export function computeStats(log: DailyLog): Stats {
     firstDay: keys[0] ?? null,
     bestDay,
   }
+}
+
+export interface Streaks {
+  currentStreak: number
+  longestStreak: number
+}
+
+/** Local 'YYYY-MM-DD' for an ISO timestamp. */
+function isoDay(iso: string): string {
+  return toKey(new Date(iso))
+}
+
+/**
+ * Perfect-day streaks: a day counts only when EVERY habit that existed that day
+ * (created on/before it, currently active) was completed. So unchecking any habit
+ * — e.g. undoing a misclick — drops today from the streak. Today gets a grace
+ * period: an incomplete today doesn't break a streak earned through yesterday.
+ */
+export function computeStreaks(
+  dailyTasks: DailyTaskDTO[],
+  completions: DailyCompletionDTO[],
+): Streaks {
+  const active = dailyTasks
+    .filter((d) => !d.deleted && !d.archived)
+    .map((d) => ({ id: d.id, since: isoDay(d.createdAt) }))
+  if (active.length === 0) return { currentStreak: 0, longestStreak: 0 }
+
+  const today = todayKey()
+  const byDay = new Map<string, Set<string>>()
+  let firstDay = today
+  for (const c of completions) {
+    if (c.deleted) continue
+    let set = byDay.get(c.dateKey)
+    if (!set) byDay.set(c.dateKey, (set = new Set()))
+    set.add(c.dailyTaskId)
+    if (c.dateKey < firstDay) firstDay = c.dateKey
+  }
+
+  const isPerfect = (day: string): boolean => {
+    const required = active.filter((h) => h.since <= day)
+    if (required.length === 0) return false
+    const done = byDay.get(day)
+    if (!done) return false
+    return required.every((h) => done.has(h.id))
+  }
+
+  // current streak — grace for today
+  let currentStreak = 0
+  let cursor = today
+  if (!isPerfect(cursor)) cursor = addDays(cursor, -1)
+  while (isPerfect(cursor)) {
+    currentStreak++
+    cursor = addDays(cursor, -1)
+  }
+
+  // longest streak across history
+  let longestStreak = 0
+  let run = 0
+  for (let d = firstDay; d <= today; d = addDays(d, 1)) {
+    if (isPerfect(d)) {
+      run++
+      if (run > longestStreak) longestStreak = run
+    } else {
+      run = 0
+    }
+  }
+
+  return { currentStreak, longestStreak }
 }
 
 export interface HeatmapDay {
