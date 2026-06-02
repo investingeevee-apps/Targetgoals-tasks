@@ -1,11 +1,64 @@
 import { useEffect, useState } from 'react'
-import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native'
+import { ScrollView, StyleSheet, Switch, Text, TextInput, View, Pressable } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import type { BarcodeScanningResult } from 'expo-camera'
 import type { PairingPayload } from '@targetgoals/shared'
 import { useSync } from '../sync/store'
 import { useStore } from '../store'
+import { formatTime, shiftTime, useNotifPrefs } from '../notifications/store'
 import { colors } from '../theme'
+
+function TimeRow({ label, value, onChange }: { label: string; value: string; onChange: (t: string) => void }) {
+  return (
+    <View style={styles.timeRow}>
+      <Text style={styles.timeLabel}>{label}</Text>
+      <View style={styles.stepper}>
+        <Pressable style={styles.stepBtn} onPress={() => onChange(shiftTime(value, -30))} hitSlop={6}>
+          <Text style={styles.stepText}>−</Text>
+        </Pressable>
+        <Text style={styles.timeValue}>{formatTime(value)}</Text>
+        <Pressable style={styles.stepBtn} onPress={() => onChange(shiftTime(value, 30))} hitSlop={6}>
+          <Text style={styles.stepText}>＋</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
+function NotificationsSection() {
+  const p = useNotifPrefs()
+  const trackColor = { false: colors.surfaceAlt, true: colors.accent }
+  return (
+    <View style={styles.notifSection}>
+      <Text style={styles.sectionTitle}>Notifications</Text>
+
+      <View style={styles.switchRow}>
+        <Text style={styles.switchLabel}>Enable notifications</Text>
+        <Switch value={p.enabled} onValueChange={p.setEnabled} trackColor={trackColor} />
+      </View>
+
+      {p.enabled && (
+        <>
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>Daily reminder</Text>
+            <Switch value={p.dailyReminder} onValueChange={p.setDailyReminder} trackColor={trackColor} />
+          </View>
+          {p.dailyReminder && (
+            <TimeRow label="Remind me at" value={p.dailyTime} onChange={p.setDailyTime} />
+          )}
+
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>Streak-at-risk warning</Text>
+            <Switch value={p.streakRisk} onValueChange={p.setStreakRisk} trackColor={trackColor} />
+          </View>
+          {p.streakRisk && (
+            <TimeRow label="Warn me at" value={p.streakTime} onChange={p.setStreakTime} />
+          )}
+        </>
+      )}
+    </View>
+  )
+}
 
 function relativeTime(ms: number): string {
   if (!ms) return 'never'
@@ -159,6 +212,8 @@ export function SettingsScreen() {
           <Text style={styles.secondaryBtnText}>Sync now</Text>
         </Pressable>
       </View>
+
+      <NotificationsSection />
     </ScrollView>
   )
 }
@@ -192,6 +247,25 @@ const styles = StyleSheet.create({
   secondaryBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center' },
   secondaryBtnText: { color: colors.text, fontWeight: '600' },
   disabled: { opacity: 0.5 },
+  notifSection: { marginTop: 28, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 18 },
+  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 6 },
+  switchRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  switchLabel: { color: colors.text, fontSize: 14 },
+  timeRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 6, paddingLeft: 12, marginBottom: 4,
+  },
+  timeLabel: { color: colors.textDim, fontSize: 13 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  stepBtn: {
+    width: 30, height: 30, borderRadius: 8, borderWidth: 1, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  stepText: { color: colors.accent, fontSize: 16, fontWeight: '700' },
+  timeValue: { color: colors.text, fontSize: 14, fontWeight: '600', minWidth: 72, textAlign: 'center' },
   scannerWrap: { flex: 1, backgroundColor: '#000' },
   scannerOverlay: { position: 'absolute', bottom: 60, left: 0, right: 0, alignItems: 'center', gap: 16 },
   scannerText: { color: '#fff', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },

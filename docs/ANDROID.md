@@ -89,6 +89,19 @@ Android's periodic update).
 > Install that APK, then long-press your home screen → **Widgets** → **TargetGoals
 > Tasks** → drag **TargetGoals Daily** onto the screen.
 
+## Notifications
+
+The app schedules **local** reminders (no server/push needed): a **daily reminder**
+to log your habits and a **streak‑at‑risk** warning in the evening. Both have
+on/off toggles and a time picker in **Settings → Notifications**, and are rescheduled
+whenever your habits change — so the daily reminder is skipped once today is done, and
+the streak warning only fires while a streak is on the line. You'll be asked for
+notification permission the first time they're enabled.
+
+> Local notifications generally work in Expo Go, but Expo has been narrowing
+> notification support there. If they don't fire in Expo Go, they will in a
+> **dev/preview build**.
+
 ## Notes & limitations
 
 - Local data is cached with **AsyncStorage** (small dataset; `expo-sqlite` is a

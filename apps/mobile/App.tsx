@@ -4,6 +4,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { useStore, type MobileScreen } from './src/store'
 import { initSync } from './src/sync/store'
+import { initNotifications } from './src/notifications/scheduler'
 import { DailyScreen } from './src/screens/DailyScreen'
 import { OverviewScreen } from './src/screens/OverviewScreen'
 import { SettingsScreen } from './src/screens/SettingsScreen'
@@ -22,6 +23,7 @@ export default function App() {
 
   useEffect(() => {
     initSync()
+    initNotifications()
   }, [])
 
   return (

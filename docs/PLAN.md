@@ -305,8 +305,11 @@ under Android Doze; no server push needed):
   changes + Android's periodic update. **Guarded** so the app still runs in Expo Go
   (widget skipped there); it only appears in a dev/preview/production build. Typechecks
   + bundles clean. *Widget itself unverifiable without an EAS build — see docs/ANDROID.md.* ✅
-- [ ] **Phase G — Notifications.** Daily reminder + streak‑at‑risk (local schedule),
-  Settings controls.
+- [x] **Phase G — Notifications.** Local `expo-notifications`: daily reminder +
+  streak-at-risk, each with opt-out toggles and a time picker in Settings. Computed
+  from the local cache and **rescheduled on every habit change + app foreground**, so
+  the daily reminder is skipped once today is complete and the streak warning only
+  fires while a streak is genuinely at risk. ✅
 - [ ] **Phase H — Build & release.** Keystore, EAS/Gradle APK, GitHub Releases, CI,
   self‑hosting README.
 - [ ] **Later — Android task lists** (parity with web), Wake‑on‑LAN, optional
