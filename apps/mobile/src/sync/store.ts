@@ -34,6 +34,10 @@ export const useSync = create<SyncState>()(
         try {
           await verifyConnection(url, token)
           set({ url, token, status: 'idle', lastError: null })
+          // First-ever connect: drop local example/seed habits so they don't
+          // duplicate the server's. Real offline edits (dirty) are kept.
+          const main = useStore.getState()
+          if (main.lastSyncedAt === 0) main.dropUnsyncedSeeds()
           await get().syncNow()
           return true
         } catch (e) {

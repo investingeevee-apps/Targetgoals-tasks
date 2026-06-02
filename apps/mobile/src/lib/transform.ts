@@ -39,15 +39,18 @@ export function buildDailyLog(completions: DailyCompletionDTO[]): DailyLog {
   return log
 }
 
-/** Friendly starter habits for a brand-new install (before first sync). */
+/**
+ * Friendly starter habits for a brand-new install (before first sync).
+ * LOCAL EXAMPLES only — `dirty` stays empty so they never push, and the sync
+ * engine drops them on first connect (see `dropUnsyncedSeeds`) so each device's
+ * starter habits don't pile up as duplicates on a shared server.
+ */
 export function seedData(): StoreData {
   const t = nowMs()
-  const dirty: Record<string, true> = {}
   const dailyTasks: DailyTaskDTO[] = [
     { id: uid(), title: 'Drink water', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
     { id: uid(), title: 'Exercise', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
     { id: uid(), title: 'Read 10 pages', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
   ]
-  dailyTasks.forEach((d) => (dirty[`dailyTask:${d.id}`] = true))
-  return { lists: [], tasks: [], dailyTasks, dailyCompletions: [], dirty, lastSyncedAt: 0 }
+  return { lists: [], tasks: [], dailyTasks, dailyCompletions: [], dirty: {}, lastSyncedAt: 0 }
 }

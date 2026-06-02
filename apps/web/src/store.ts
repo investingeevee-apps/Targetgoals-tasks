@@ -84,6 +84,7 @@ interface State {
   collectDirty: () => { changes: Partial<SyncChanges>; keys: string[] }
   applyServerChanges: (changes: Partial<SyncChanges>) => void
   markSynced: (serverNow: number, keys: string[]) => void
+  dropUnsyncedSeeds: () => void
   importLegacy: () => number
 }
 
@@ -363,6 +364,20 @@ export const useStore = create<State>()(
             const dirty = { ...s.dirty }
             for (const k of keys) delete dirty[k]
             return { dirty, lastSyncedAt: serverNow }
+          }),
+        // Drop local example/seed rows (anything never edited, i.e. not dirty) when
+        // first connecting to a server, so starter habits don't become duplicates.
+        dropUnsyncedSeeds: () =>
+          set((s) => {
+            const has = (kind: string, id: string) => Boolean(s.dirty[`${kind}:${id}`])
+            const lists = s.lists.filter((r) => has('list', r.id))
+            const tasks = s.tasks.filter((r) => has('task', r.id))
+            const dailyTasks = s.dailyTasks.filter((r) => has('dailyTask', r.id))
+            const keptDaily = new Set(dailyTasks.map((d) => d.id))
+            const dailyCompletions = s.dailyCompletions.filter(
+              (c) => has('completion', c.id) && keptDaily.has(c.dailyTaskId),
+            )
+            return { lists, tasks, dailyTasks, dailyCompletions }
           }),
         importLegacy: () => {
           const data = convertLegacy()

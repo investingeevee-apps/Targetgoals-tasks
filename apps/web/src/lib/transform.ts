@@ -152,13 +152,17 @@ export function convertLegacy(): StoreData | null {
   return { lists, tasks, dailyTasks, dailyCompletions, dirty, lastSyncedAt: 0 }
 }
 
-/** Friendly starter data for a brand-new user (no legacy, no server data yet). */
+/**
+ * Friendly starter data for a brand-new user (no legacy, no server data yet).
+ * These are LOCAL EXAMPLES only — `dirty` is left empty so they never sync to a
+ * server, and the sync engine discards them the first time the device connects
+ * (see `dropUnsyncedSeeds`). This prevents every device's starter habits from
+ * piling up as duplicates on a shared server.
+ */
 export function seedData(): StoreData {
   const t = nowMs()
   const listId = uid()
   const dirty: Record<string, true> = {}
-  const mark = (k: string) => (dirty[k] = true)
-  mark(`list:${listId}`)
 
   const tasks: TaskDTO[] = [
     {
@@ -188,14 +192,12 @@ export function seedData(): StoreData {
       deleted: false,
     },
   ]
-  tasks.forEach((task) => mark(`task:${task.id}`))
 
   const dailyTasks: DailyTaskDTO[] = [
     { id: uid(), title: 'Drink water', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
     { id: uid(), title: 'Exercise', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
     { id: uid(), title: 'Read 10 pages', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
   ]
-  dailyTasks.forEach((d) => mark(`dailyTask:${d.id}`))
 
   return {
     lists: [{ id: listId, name: 'My Tasks', createdAt: nowIso(), updatedAt: t, deleted: false }],
