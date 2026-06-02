@@ -295,8 +295,11 @@ under Android Doze; no server push needed):
   (`service:install`/`uninstall` via Task Scheduler) and a full self-hosting guide
   (`docs/SELF-HOSTING.md`): keep-alive options (Task Scheduler / node-windows / NSSM /
   systemd), Tailscale join, and `tailscale serve` HTTPS. ✅
-- [ ] **Phase E — Android app.** Expo app: Daily + Overview, expo‑sqlite cache,
-  shared sync engine, QR pairing, celebrations.
+- [x] **Phase E — Android app.** Expo app (`apps/mobile`): Daily + Overview screens,
+  bottom tabs, sync-native store (AsyncStorage cache) reusing `@targetgoals/shared`,
+  offline-first sync engine, **QR pairing** (+ manual), and celebrations. Typechecks
+  clean. *Device run + APK via EAS happen on the user's machine — see
+  `docs/ANDROID.md`.* ✅ *(deviation: AsyncStorage instead of expo-sqlite for v1.)*
 - [ ] **Phase F — Widget.** `react-native-android-widget` (two sizes), WorkManager
   refresh, tap‑to‑open.
 - [ ] **Phase G — Notifications.** Daily reminder + streak‑at‑risk (local schedule),

@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "TargetGoals Tasks",
+    "slug": "targetgoals-tasks",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "targetgoals",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b1220",
+    "android": {
+      "package": "com.targetgoals.tasks",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow TargetGoals Tasks to use the camera to scan your server's pairing QR code."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {}
+    }
+  }
+}

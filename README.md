@@ -25,6 +25,12 @@ account, and no data leaves your machine.
 - **Local & private** — all data persists in `localStorage`. Export is as simple
   as copying the `tally-store-v1` key.
 
+## Android app
+
+`apps/mobile` is an Expo / React Native app (Daily + Overview, offline-first, QR
+pairing) that syncs with your server. Quick run: `npm run dev:mobile` then scan with
+**Expo Go**. Build a sideloadable APK with EAS — see **[docs/ANDROID.md](docs/ANDROID.md)**.
+
 ## Tech stack
 
 - [Vite](https://vite.dev/) + [React 18](https://react.dev/) + TypeScript

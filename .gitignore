@@ -9,6 +9,14 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# expo / react-native
+.expo/
+.expo-shared/
+apps/mobile/android/
+apps/mobile/ios/
+*.orig.*
+web-build/
+
 # secrets & local data (NEVER commit a user's tasks, db, or token)
 .env
 .env.*
