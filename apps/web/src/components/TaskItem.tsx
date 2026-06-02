@@ -1,6 +1,6 @@
-import { useStore } from '../store'
-import type { Task } from '../types'
-import { formatDue, isOverdue } from '../lib/dates'
+﻿import { useStore } from '../store'
+import type { Task } from '@targetgoals/shared'
+import { formatDue, isOverdue } from '@targetgoals/shared'
 import { Calendar, CheckCircle, Circle, Star } from './Icons'
 
 export function TaskItem({ task }: { task: Task }) {

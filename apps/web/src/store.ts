@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   Celebration,
@@ -8,9 +8,9 @@ import type {
   Screen,
   Task,
   TaskList,
-} from './types'
-import { todayKey } from './lib/dates'
-import { computeStats } from './lib/stats'
+} from '@targetgoals/shared'
+import { todayKey } from '@targetgoals/shared'
+import { computeStats } from '@targetgoals/shared'
 
 function uid(): string {
   // crypto.randomUUID is available in all modern browsers.
@@ -69,7 +69,7 @@ function seed(): Pick<State, 'lists' | 'tasks' | 'dailyTasks' | 'dailyLog'> {
       {
         id: uid(),
         listId,
-        title: 'Welcome to TargetGoals Tasks 👋  Click me to add notes & a due date',
+        title: 'Welcome to TargetGoals Tasks ðŸ‘‹  Click me to add notes & a due date',
         notes: '',
         starred: true,
         completed: false,
@@ -78,7 +78,7 @@ function seed(): Pick<State, 'lists' | 'tasks' | 'dailyTasks' | 'dailyLog'> {
       {
         id: uid(),
         listId,
-        title: 'Try the Daily tab — habits that reset every day',
+        title: 'Try the Daily tab â€” habits that reset every day',
         notes: '',
         starred: false,
         completed: false,
@@ -246,10 +246,10 @@ export const useStore = create<State>()(
               const doneActive = next.filter((x) => activeIds.has(x)).length
               const streak = computeStats(dailyLog).currentStreak
               if (total > 0 && doneActive === total) {
-                // Completed everything for the day — the big one.
+                // Completed everything for the day â€” the big one.
                 celebration = { kind: 'allDone', streak, total }
               } else if (doneActive === 1) {
-                // First task logged today — hot streak nudge.
+                // First task logged today â€” hot streak nudge.
                 celebration = { kind: 'logged', streak, total }
               }
             }
@@ -261,7 +261,7 @@ export const useStore = create<State>()(
     {
       name: 'tally-store-v1',
       version: 1,
-      // Persist data + navigation only — never the transient celebration popup.
+      // Persist data + navigation only â€” never the transient celebration popup.
       partialize: (s) => ({
         lists: s.lists,
         tasks: s.tasks,

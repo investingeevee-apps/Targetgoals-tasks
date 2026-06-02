@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useStore } from '../store'
-import { todayKey, formatLongDate } from '../lib/dates'
-import { computeStats } from '../lib/stats'
+import { todayKey, formatLongDate } from '@targetgoals/shared'
+import { computeStats } from '@targetgoals/shared'
 import { CheckCircle, Circle, Flame, Plus, Trash } from './Icons'
 
 export function DailyScreen() {
@@ -150,7 +150,7 @@ export function DailyScreen() {
       </div>
 
       <p className="mt-4 border-t border-slate-800 pt-3 text-center text-xs text-slate-500">
-        Resets every day at midnight · completions are tracked in the Overview
+        Resets every day at midnight Â· completions are tracked in the Overview
       </p>
     </div>
   )

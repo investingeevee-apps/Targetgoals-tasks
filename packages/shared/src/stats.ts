@@ -1,4 +1,4 @@
-import type { DailyLog } from '../types'
+import type { DailyLog } from './types'
 import { addDays, dayDiff, todayKey } from './dates'
 
 export interface Stats {

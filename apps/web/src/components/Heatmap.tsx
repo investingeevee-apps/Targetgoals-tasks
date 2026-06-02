@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
-import type { DailyLog } from '../types'
-import { buildHeatmap, intensity } from '../lib/stats'
-import { formatLongDate, todayKey } from '../lib/dates'
+﻿import { useMemo } from 'react'
+import type { DailyLog } from '@targetgoals/shared'
+import { buildHeatmap, intensity } from '@targetgoals/shared'
+import { formatLongDate, todayKey } from '@targetgoals/shared'
 
 const LEVELS = [
   'bg-slate-800/70',
@@ -47,7 +47,7 @@ export function Heatmap({ log, weeks = 18 }: { log: DailyLog; weeks?: number }) 
                     title={
                       future
                         ? ''
-                        : `${day.count} completed · ${formatLongDate(day.key)}`
+                        : `${day.count} completed Â· ${formatLongDate(day.key)}`
                     }
                     className={`h-3.5 w-3.5 rounded-sm ${
                       future ? 'bg-transparent' : LEVELS[lvl]

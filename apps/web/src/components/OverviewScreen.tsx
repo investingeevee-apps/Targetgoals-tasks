@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { useStore } from '../store'
-import { computeStats } from '../lib/stats'
-import { formatLongDate } from '../lib/dates'
+import { computeStats } from '@targetgoals/shared'
+import { formatLongDate } from '@targetgoals/shared'
 import { Heatmap } from './Heatmap'
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {

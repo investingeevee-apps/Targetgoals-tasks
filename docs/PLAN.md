@@ -43,7 +43,7 @@ home‑screen widget** show the same tasks, reachable from anywhere over Tailsca
 | Notifications | **Daily reminder + streak‑at‑risk** |
 | Server runtime | **Auto‑start Windows background service** |
 | Server host | **Default: your PC**; always‑on host (Pi/mini‑PC) offered as a documented option |
-| Port / HTTPS | **`:4000`** (configurable); recommend **`tailscale serve`** for HTTPS so the web PWA works remotely |
+| Port / HTTPS | **`:4000`** (configurable); **`tailscale serve` HTTPS is the documented default** so the web PWA works remotely |
 | Pairing | **QR code** (server shows URL+token, app scans) |
 | APK build | **Expo EAS Build** (cloud; no local Android SDK) |
 | Notifications | Defaults on; **master + per‑type opt‑out toggles** in Settings |
@@ -176,10 +176,11 @@ Every row carries:
   - The **web app's PWA/offline features require a "secure context"** = HTTPS *or*
     `localhost`. So they work at `http://localhost:4000` on the PC, but **not** at a
     remote `http://…ts.net:4000`.
-  - **Recommended setup:** use **`tailscale serve`** to front the server with a real
-    Let's Encrypt cert → `https://your‑pc.tailnet.ts.net`. Encrypted *and* a secure
-    context everywhere, so the web app is fully functional remotely. The server still
-    listens on `:4000` internally; Tailscale handles TLS on 443.
+  - **Default documented setup:** use **`tailscale serve`** to front the server with
+    a real Let's Encrypt cert → `https://your‑pc.tailnet.ts.net`. Encrypted *and* a
+    secure context everywhere, so the web app is fully functional remotely — it won't
+    be quietly limited. The server still listens on `:4000` internally; Tailscale
+    handles TLS on 443. (Pure HTTP still works for the Android app if someone skips this.)
   - First Node bind may trigger a **one‑time Windows Firewall allow** prompt
     (private/Tailscale network).
 
@@ -322,15 +323,15 @@ under Android Doze; no server push needed):
 2. ✅ **Server host:** **default = your PC**; always‑on host offered as a documented option.
 3. ✅ **Reminder defaults:** 9:00 AM daily, 8:00 PM streak‑at‑risk — with **opt‑out
    toggles** (master + per‑type) in Settings.
-4. ✅ **Port `:4000`:** kept as default, **configurable**; recommend **`tailscale
-   serve`** HTTPS so the web app works remotely (Android app fine on HTTP‑over‑Tailscale).
+4. ✅ **Port `:4000`:** kept as default, **configurable**; Android app fine on
+   HTTP‑over‑Tailscale.
+5. ✅ **HTTPS:** **`tailscale serve` HTTPS is the documented default** so the web app
+   isn't quietly limited remotely (see §7.1).
 
 **Still open (can decide during build):**
-1. **HTTPS default?** Make `tailscale serve` HTTPS the *recommended default* in setup
-   docs, or an optional "if you want the web app remotely" add‑on?
-2. **EAS account/keystore:** let EAS auto‑manage the Android keystore, or supply your own?
-3. **Heatmap/Overview on a small phone screen:** keep the full 18‑week grid or a
+1. **EAS account/keystore:** let EAS auto‑manage the Android keystore, or supply your own?
+2. **Heatmap/Overview on a small phone screen:** keep the full 18‑week grid or a
    compact range on mobile?
-4. **Reminder copy/tone:** plain ("Log your daily tasks") vs the app's hype voice
+3. **Reminder copy/tone:** plain ("Log your daily tasks") vs the app's hype voice
    ("🔥 Keep your streak alive!").
 ```

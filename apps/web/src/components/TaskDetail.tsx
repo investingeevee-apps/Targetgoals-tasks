@@ -1,5 +1,5 @@
-import { useStore } from '../store'
-import type { Task } from '../types'
+﻿import { useStore } from '../store'
+import type { Task } from '@targetgoals/shared'
 import { Close, Star, Trash } from './Icons'
 
 export function TaskDetail({ task }: { task: Task }) {
@@ -42,7 +42,7 @@ export function TaskDetail({ task }: { task: Task }) {
             value={task.notes}
             onChange={(e) => updateTask(task.id, { notes: e.target.value })}
             rows={5}
-            placeholder="Add details…"
+            placeholder="Add detailsâ€¦"
             className="w-full resize-none rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-accent"
           />
         </div>

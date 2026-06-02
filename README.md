@@ -56,29 +56,44 @@ A daily task is never "completed" permanently. Instead, completing one writes it
 id into `dailyLog[today]`. The checklist's checked state is simply "is this task in
 today's log?" — so when the date rolls over to a new day, the list shows up empty
 again while every past day stays recorded. The Overview reads `dailyLog` to compute
-streaks and the heatmap. See [`src/store.ts`](src/store.ts) and
-[`src/lib/stats.ts`](src/lib/stats.ts).
+streaks and the heatmap. See [`apps/web/src/store.ts`](apps/web/src/store.ts) and
+[`packages/shared/src/stats.ts`](packages/shared/src/stats.ts).
 
 ## Project structure
 
+This is an **npm-workspaces monorepo**. Today it holds the shared core and the web
+app; the server and Android app described in [`docs/PLAN.md`](docs/PLAN.md) will be
+added as `apps/server` and `apps/mobile`.
+
 ```
-src/
-  App.tsx              # layout shell
-  store.ts             # Zustand store + localStorage persistence
-  types.ts             # shared data types
-  lib/
-    dates.ts           # local-timezone date helpers
-    stats.ts           # streak / heatmap computation
-  components/
-    Sidebar.tsx
-    TasksScreen.tsx    # classic task list view
-    TaskItem.tsx
-    TaskDetail.tsx     # notes / due date / star / delete panel
-    DailyScreen.tsx    # recurring daily checklist
-    OverviewScreen.tsx # stat cards + heatmap
-    Heatmap.tsx
-    Icons.tsx
+packages/
+  shared/                # @targetgoals/shared — framework-agnostic core
+    src/
+      types.ts           # shared data types
+      dates.ts           # local-timezone date helpers
+      stats.ts           # streak / heatmap computation
+      index.ts           # barrel export
+apps/
+  web/                   # @targetgoals/web — Vite + React client
+    src/
+      App.tsx            # layout shell
+      store.ts           # Zustand store + localStorage persistence
+      components/
+        Sidebar.tsx
+        TasksScreen.tsx     # classic task list view
+        TaskItem.tsx
+        TaskDetail.tsx      # notes / due date / star / delete panel
+        DailyScreen.tsx     # recurring daily checklist
+        OverviewScreen.tsx  # stat cards + heatmap
+        Heatmap.tsx
+        Celebration.tsx     # hot-streak / perfect-day popups
+        Icons.tsx
+docs/
+  PLAN.md                # roadmap: self-hosted sync, Android app & widget
 ```
+
+Run `npm install`, `npm run dev`, and `npm run build` from the **repo root** — the
+workspace scripts delegate to the web app (and build `@targetgoals/shared` first).
 
 ## Publishing to GitHub
 
