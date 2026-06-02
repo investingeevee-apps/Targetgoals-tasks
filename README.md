@@ -95,6 +95,23 @@ docs/
 Run `npm install`, `npm run dev`, and `npm run build` from the **repo root** — the
 workspace scripts delegate to the web app (and build `@targetgoals/shared` first).
 
+### Sync server (optional, for multi-device)
+
+`apps/server` is a self-hostable sync server (Express + libSQL/Drizzle) so the web
+app and the upcoming Android app can share one source of truth. Your data lives in a
+git-ignored SQLite file; a bearer token is generated on first run.
+
+```bash
+# (optional) configure: copy apps/server/.env.example -> apps/server/.env
+npm run dev:server        # start on http://localhost:4000
+# then open http://localhost:4000/pair to scan/copy the pairing QR + token
+```
+
+Endpoints: `GET /api/health` (open), `POST /api/sync` (push+pull), `GET /api/sync?since=`
+(pull), `GET /api/state`, and `GET /pair`. All `/api/*` except health require
+`Authorization: Bearer <token>`. See [`docs/PLAN.md`](docs/PLAN.md) for the full
+architecture (Tailscale, HTTPS, offline-first clients).
+
 ## Publishing to GitHub
 
 This repo is initialized locally. To publish it:

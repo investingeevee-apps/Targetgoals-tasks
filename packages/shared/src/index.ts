@@ -4,3 +4,4 @@
 export * from './types'
 export * from './dates'
 export * from './stats'
+export * from './sync'

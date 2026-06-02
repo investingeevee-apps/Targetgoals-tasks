@@ -9,6 +9,20 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# secrets & local data (NEVER commit a user's tasks, db, or token)
+.env
+.env.*
+!.env.example
+**/data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+
+# android signing
+*.keystore
+*.jks
+
 # logs
 npm-debug.log*
 yarn-debug.log*

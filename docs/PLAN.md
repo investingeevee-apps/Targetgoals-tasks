@@ -279,10 +279,11 @@ under Android Doze; no server push needed):
 
 > Each phase is independently shippable and leaves the app working.
 
-- [ ] **Phase A — Monorepo & shared package.** Convert to npm workspaces; extract
-  `types/dates/stats` into `packages/shared`. *No user‑visible change.*
-- [ ] **Phase B — Server.** Express + SQLite (Drizzle) schema, REST + `/sync`, token
-  auth, `/pair` QR page. Seed/migrate tooling.
+- [x] **Phase A — Monorepo & shared package.** Convert to npm workspaces; extract
+  `types/dates/stats` into `packages/shared`. *No user‑visible change.* ✅
+- [x] **Phase B — Server.** Express + SQLite (libSQL/Drizzle) schema, REST + `/sync`
+  (push+pull, last‑write‑wins, tombstones), bearer‑token auth, `/pair` QR page, and
+  it serves the built web app. Lives in `apps/server`. ✅
 - [ ] **Phase C — Web on server.** Refactor web persistence from localStorage →
   API + offline cache; keep PWA; add the **one‑time localStorage import**.
 - [ ] **Phase D — Windows service + Tailscale.** Auto‑start service scripts; docs

@@ -1,0 +1,32 @@
+{
+  "name": "@targetgoals/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TargetGoals Tasks — self-hosted sync server (Express + SQLite/Drizzle) with REST + /sync API, token auth, and QR pairing.",
+  "license": "MIT",
+  "scripts": {
+    "prebuild": "tsc -b ../../packages/shared",
+    "predev": "tsc -b ../../packages/shared",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@targetgoals/shared": "*",
+    "@libsql/client": "^0.14.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.38.3",
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.5",
+    "@types/qrcode": "^1.5.5",
+    "typescript": "^5.7.2"
+  }
+}
