@@ -10,9 +10,18 @@ export function DailyScreen() {
   const completions = useStore((s) => s.dailyCompletions)
   const addDailyTask = useStore((s) => s.addDailyTask)
   const deleteDailyTask = useStore((s) => s.deleteDailyTask)
+  const renameDailyTask = useStore((s) => s.renameDailyTask)
   const toggleDailyToday = useStore((s) => s.toggleDailyToday)
 
   const [draft, setDraft] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState('')
+
+  function commitRename() {
+    if (editingId) renameDailyTask(editingId, editDraft)
+    setEditingId(null)
+    setEditDraft('')
+  }
 
   const key = todayKey()
   const dailyLog = useMemo(() => buildDailyLog(completions), [completions])
@@ -72,6 +81,7 @@ export function DailyScreen() {
 
       {active.map((d) => {
         const done = doneToday.has(d.id)
+        const editing = editingId === d.id
         return (
           <View key={d.id} style={styles.taskRow}>
             <Pressable onPress={() => toggleDailyToday(d.id)} hitSlop={8}>
@@ -79,10 +89,43 @@ export function DailyScreen() {
                 {done && <Text style={styles.checkMark}>✓</Text>}
               </View>
             </Pressable>
-            <Text style={[styles.taskTitle, done && styles.taskTitleDone]}>{d.title}</Text>
-            <Pressable onPress={() => deleteDailyTask(d.id)} hitSlop={8}>
-              <Text style={styles.trash}>🗑</Text>
-            </Pressable>
+
+            {editing ? (
+              <TextInput
+                style={styles.editInput}
+                value={editDraft}
+                onChangeText={setEditDraft}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={commitRename}
+                onBlur={commitRename}
+              />
+            ) : (
+              <Text style={[styles.taskTitle, done && styles.taskTitleDone]}>{d.title}</Text>
+            )}
+
+            {editing ? (
+              <Pressable onPress={commitRename} hitSlop={8}>
+                <Text style={styles.save}>Save</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  setEditingId(d.id)
+                  setEditDraft(d.title)
+                }}
+                hitSlop={8}
+                style={styles.rowAction}
+              >
+                <Text style={styles.pencil}>✎</Text>
+              </Pressable>
+            )}
+
+            {!editing && (
+              <Pressable onPress={() => deleteDailyTask(d.id)} hitSlop={8} style={styles.rowAction}>
+                <Text style={styles.trash}>🗑</Text>
+              </Pressable>
+            )}
           </View>
         )
       })}
@@ -120,6 +163,17 @@ const styles = StyleSheet.create({
   checkMark: { color: '#fff', fontSize: 14, fontWeight: '900', lineHeight: 16 },
   taskTitle: { flex: 1, color: colors.text, fontSize: 15 },
   taskTitleDone: { color: colors.textFaint, textDecorationLine: 'line-through' },
+  editInput: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.accent,
+    paddingVertical: 2,
+  },
+  rowAction: { paddingHorizontal: 2 },
+  pencil: { fontSize: 15, color: colors.textDim },
+  save: { fontSize: 14, fontWeight: '700', color: colors.accent },
   trash: { fontSize: 16, opacity: 0.7 },
   footer: { color: colors.textFaint, fontSize: 11, textAlign: 'center', marginTop: 24 },
 })

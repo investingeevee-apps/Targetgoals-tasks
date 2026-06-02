@@ -3,7 +3,7 @@ import { useStore } from '../store'
 import { todayKey, formatLongDate } from '@targetgoals/shared'
 import { computeStreaks } from '@targetgoals/shared'
 import { buildDailyLog } from '../lib/transform'
-import { CheckCircle, Circle, Flame, Plus, Trash } from './Icons'
+import { CheckCircle, Circle, Flame, Pencil, Plus, Trash } from './Icons'
 
 export function DailyScreen() {
   const allDailyTasks = useStore((s) => s.dailyTasks)
@@ -136,6 +136,19 @@ export function DailyScreen() {
                   >
                     {d.title}
                   </span>
+                </button>
+              )}
+
+              {editingId !== d.id && (
+                <button
+                  className="shrink-0 text-slate-600 opacity-0 transition hover:text-accent group-hover:opacity-100"
+                  onClick={() => {
+                    setEditDraft(d.title)
+                    setEditingId(d.id)
+                  }}
+                  title="Rename"
+                >
+                  <Pencil width={15} height={15} />
                 </button>
               )}
 
