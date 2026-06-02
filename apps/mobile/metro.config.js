@@ -8,8 +8,9 @@ const workspaceRoot = path.resolve(projectRoot, '../..')
 
 const config = getDefaultConfig(projectRoot)
 
-// 1. Watch the whole monorepo so changes to packages/* are picked up.
-config.watchFolders = [workspaceRoot]
+// 1. Watch the whole monorepo (in addition to Expo's defaults) so changes to
+//    packages/* are picked up.
+config.watchFolders = [...(config.watchFolders ?? []), workspaceRoot]
 
 // 2. Resolve modules from the app first, then the workspace root.
 config.resolver.nodeModulesPaths = [
