@@ -1,28 +1,51 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   Celebration,
-  DailyLog,
-  DailyTask,
+  DailyCompletionDTO,
+  DailyTaskDTO,
   ID,
+  ListDTO,
   Screen,
-  Task,
-  TaskList,
+  SyncChanges,
+  TaskDTO,
 } from '@targetgoals/shared'
-import { todayKey } from '@targetgoals/shared'
-import { computeStats } from '@targetgoals/shared'
+import { computeStats, todayKey } from '@targetgoals/shared'
+import {
+  STORE_KEY,
+  buildDailyLog,
+  convertLegacy,
+  deriveInitialData,
+  uid,
+} from './lib/transform'
 
-function uid(): string {
-  // crypto.randomUUID is available in all modern browsers.
-  return crypto.randomUUID()
+const nowIso = () => new Date().toISOString()
+const nowMs = () => Date.now()
+
+/** Generic last-write-wins merge of incoming rows into a local array (by id). */
+function mergeById<T extends { id: string; updatedAt: number }>(
+  local: T[],
+  incoming: T[],
+): T[] {
+  if (!incoming.length) return local
+  const map = new Map(local.map((r) => [r.id, r]))
+  for (const row of incoming) {
+    const cur = map.get(row.id)
+    if (!cur || row.updatedAt >= cur.updatedAt) map.set(row.id, row)
+  }
+  return Array.from(map.values())
 }
 
 interface State {
-  // data
-  lists: TaskList[]
-  tasks: Task[]
-  dailyTasks: DailyTask[]
-  dailyLog: DailyLog
+  // data (includes soft-deleted tombstones; selectors filter them out)
+  lists: ListDTO[]
+  tasks: TaskDTO[]
+  dailyTasks: DailyTaskDTO[]
+  dailyCompletions: DailyCompletionDTO[]
+
+  // sync bookkeeping
+  dirty: Record<string, true>
+  lastSyncedAt: number
 
   // navigation
   screen: Screen
@@ -33,75 +56,52 @@ interface State {
   celebration: Celebration | null
   dismissCelebration: () => void
 
-  // ---- navigation actions ----
+  // ---- navigation ----
   setScreen: (screen: Screen) => void
   selectList: (id: ID) => void
   selectTask: (id: ID | null) => void
 
-  // ---- list actions ----
+  // ---- lists ----
   addList: (name: string) => void
   renameList: (id: ID, name: string) => void
   deleteList: (id: ID) => void
 
-  // ---- task actions ----
+  // ---- tasks ----
   addTask: (listId: ID, title: string) => void
-  updateTask: (id: ID, patch: Partial<Omit<Task, 'id' | 'listId'>>) => void
+  updateTask: (id: ID, patch: Partial<Pick<TaskDTO, 'title' | 'notes' | 'due' | 'starred'>>) => void
   toggleTask: (id: ID) => void
   toggleStar: (id: ID) => void
   deleteTask: (id: ID) => void
   clearCompleted: (listId: ID) => void
 
-  // ---- daily task actions ----
+  // ---- daily tasks ----
   addDailyTask: (title: string) => void
   renameDailyTask: (id: ID, title: string) => void
   deleteDailyTask: (id: ID) => void
   toggleDailyToday: (id: ID) => void
-}
 
-const now = () => new Date().toISOString()
-
-/** A friendly starter dataset so the app isn't empty on first run. */
-function seed(): Pick<State, 'lists' | 'tasks' | 'dailyTasks' | 'dailyLog'> {
-  const listId = uid()
-  return {
-    lists: [{ id: listId, name: 'My Tasks', createdAt: now() }],
-    tasks: [
-      {
-        id: uid(),
-        listId,
-        title: 'Welcome to TargetGoals Tasks ðŸ‘‹  Click me to add notes & a due date',
-        notes: '',
-        starred: true,
-        completed: false,
-        createdAt: now(),
-      },
-      {
-        id: uid(),
-        listId,
-        title: 'Try the Daily tab â€” habits that reset every day',
-        notes: '',
-        starred: false,
-        completed: false,
-        createdAt: now(),
-      },
-    ],
-    dailyTasks: [
-      { id: uid(), title: 'Drink water', createdAt: now(), archived: false },
-      { id: uid(), title: 'Exercise', createdAt: now(), archived: false },
-      { id: uid(), title: 'Read 10 pages', createdAt: now(), archived: false },
-    ],
-    dailyLog: {},
-  }
+  // ---- sync integration (called by the sync engine) ----
+  collectDirty: () => { changes: Partial<SyncChanges>; keys: string[] }
+  applyServerChanges: (changes: Partial<SyncChanges>) => void
+  markSynced: (serverNow: number, keys: string[]) => void
+  importLegacy: () => number
 }
 
 export const useStore = create<State>()(
   persist(
-    (set) => {
-      const initial = seed()
+    (set, get) => {
+      const initial = deriveInitialData()
+
+      /** Mark an entity dirty so the sync engine pushes it. */
+      const dirtyWith = (s: State, kind: string, id: string): Record<string, true> => ({
+        ...s.dirty,
+        [`${kind}:${id}`]: true,
+      })
+
       return {
         ...initial,
         screen: 'tasks',
-        currentListId: initial.lists[0]?.id ?? null,
+        currentListId: initial.lists.find((l) => !l.deleted)?.id ?? null,
         selectedTaskId: null,
         celebration: null,
 
@@ -119,7 +119,11 @@ export const useStore = create<State>()(
           if (!trimmed) return
           const id = uid()
           set((s) => ({
-            lists: [...s.lists, { id, name: trimmed, createdAt: now() }],
+            lists: [
+              ...s.lists,
+              { id, name: trimmed, createdAt: nowIso(), updatedAt: nowMs(), deleted: false },
+            ],
+            dirty: dirtyWith(s, 'list', id),
             screen: 'tasks',
             currentListId: id,
           }))
@@ -128,40 +132,66 @@ export const useStore = create<State>()(
           const trimmed = name.trim()
           if (!trimmed) return
           set((s) => ({
-            lists: s.lists.map((l) => (l.id === id ? { ...l, name: trimmed } : l)),
+            lists: s.lists.map((l) =>
+              l.id === id ? { ...l, name: trimmed, updatedAt: nowMs() } : l,
+            ),
+            dirty: dirtyWith(s, 'list', id),
           }))
         },
         deleteList: (id) =>
           set((s) => {
-            const lists = s.lists.filter((l) => l.id !== id)
-            const tasks = s.tasks.filter((t) => t.listId !== id)
-            const currentListId =
-              s.currentListId === id ? lists[0]?.id ?? null : s.currentListId
-            return { lists, tasks, currentListId }
+            const t = nowMs()
+            const dirty = { ...s.dirty, [`list:${id}`]: true as const }
+            // tombstone the list and its tasks
+            const tasks = s.tasks.map((task) => {
+              if (task.listId !== id || task.deleted) return task
+              dirty[`task:${task.id}`] = true
+              return { ...task, deleted: true, updatedAt: t }
+            })
+            const lists = s.lists.map((l) =>
+              l.id === id ? { ...l, deleted: true, updatedAt: t } : l,
+            )
+            const remaining = lists.filter((l) => !l.deleted)
+            return {
+              lists,
+              tasks,
+              dirty,
+              currentListId:
+                s.currentListId === id ? remaining[0]?.id ?? null : s.currentListId,
+            }
           }),
 
         // ---- tasks ----
         addTask: (listId, title) => {
           const trimmed = title.trim()
           if (!trimmed) return
+          const id = uid()
           set((s) => ({
             tasks: [
               ...s.tasks,
               {
-                id: uid(),
+                id,
                 listId,
                 title: trimmed,
                 notes: '',
+                due: null,
                 starred: false,
                 completed: false,
-                createdAt: now(),
+                completedAt: null,
+                createdAt: nowIso(),
+                updatedAt: nowMs(),
+                deleted: false,
               },
             ],
+            dirty: dirtyWith(s, 'task', id),
           }))
         },
         updateTask: (id, patch) =>
           set((s) => ({
-            tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+            tasks: s.tasks.map((t) =>
+              t.id === id ? { ...t, ...patch, updatedAt: nowMs() } : t,
+            ),
+            dirty: dirtyWith(s, 'task', id),
           })),
         toggleTask: (id) =>
           set((s) => ({
@@ -170,36 +200,51 @@ export const useStore = create<State>()(
                 ? {
                     ...t,
                     completed: !t.completed,
-                    completedAt: !t.completed ? now() : undefined,
+                    completedAt: !t.completed ? nowIso() : null,
+                    updatedAt: nowMs(),
                   }
                 : t,
             ),
+            dirty: dirtyWith(s, 'task', id),
           })),
         toggleStar: (id) =>
           set((s) => ({
             tasks: s.tasks.map((t) =>
-              t.id === id ? { ...t, starred: !t.starred } : t,
+              t.id === id ? { ...t, starred: !t.starred, updatedAt: nowMs() } : t,
             ),
+            dirty: dirtyWith(s, 'task', id),
           })),
         deleteTask: (id) =>
           set((s) => ({
-            tasks: s.tasks.filter((t) => t.id !== id),
+            tasks: s.tasks.map((t) =>
+              t.id === id ? { ...t, deleted: true, updatedAt: nowMs() } : t,
+            ),
+            dirty: dirtyWith(s, 'task', id),
             selectedTaskId: s.selectedTaskId === id ? null : s.selectedTaskId,
           })),
         clearCompleted: (listId) =>
-          set((s) => ({
-            tasks: s.tasks.filter((t) => !(t.listId === listId && t.completed)),
-          })),
+          set((s) => {
+            const t = nowMs()
+            const dirty = { ...s.dirty }
+            const tasks = s.tasks.map((task) => {
+              if (task.listId !== listId || !task.completed || task.deleted) return task
+              dirty[`task:${task.id}`] = true
+              return { ...task, deleted: true, updatedAt: t }
+            })
+            return { tasks, dirty }
+          }),
 
         // ---- daily tasks ----
         addDailyTask: (title) => {
           const trimmed = title.trim()
           if (!trimmed) return
+          const id = uid()
           set((s) => ({
             dailyTasks: [
               ...s.dailyTasks,
-              { id: uid(), title: trimmed, createdAt: now(), archived: false },
+              { id, title: trimmed, archived: false, createdAt: nowIso(), updatedAt: nowMs(), deleted: false },
             ],
+            dirty: dirtyWith(s, 'dailyTask', id),
           }))
         },
         renameDailyTask: (id, title) => {
@@ -207,66 +252,149 @@ export const useStore = create<State>()(
           if (!trimmed) return
           set((s) => ({
             dailyTasks: s.dailyTasks.map((d) =>
-              d.id === id ? { ...d, title: trimmed } : d,
+              d.id === id ? { ...d, title: trimmed, updatedAt: nowMs() } : d,
             ),
+            dirty: dirtyWith(s, 'dailyTask', id),
           }))
         },
         deleteDailyTask: (id) =>
           set((s) => {
-            // Remove the task and scrub it from the historical log.
-            const dailyLog: DailyLog = {}
-            for (const [k, ids] of Object.entries(s.dailyLog)) {
-              const filtered = ids.filter((x) => x !== id)
-              if (filtered.length) dailyLog[k] = filtered
-            }
-            return {
-              dailyTasks: s.dailyTasks.filter((d) => d.id !== id),
-              dailyLog,
-            }
+            const t = nowMs()
+            const dirty = { ...s.dirty, [`dailyTask:${id}`]: true as const }
+            // tombstone the habit and its completion history
+            const dailyCompletions = s.dailyCompletions.map((c) => {
+              if (c.dailyTaskId !== id || c.deleted) return c
+              dirty[`completion:${c.id}`] = true
+              return { ...c, deleted: true, updatedAt: t }
+            })
+            const dailyTasks = s.dailyTasks.map((d) =>
+              d.id === id ? { ...d, deleted: true, updatedAt: t } : d,
+            )
+            return { dailyTasks, dailyCompletions, dirty }
           }),
-        toggleDailyToday: (id) =>
+        toggleDailyToday: (dailyTaskId) =>
           set((s) => {
             const key = todayKey()
-            const today = s.dailyLog[key] ?? []
-            const has = today.includes(id)
-            const next = has
-              ? today.filter((x) => x !== id)
-              : [...today, id]
-            const dailyLog = { ...s.dailyLog }
-            if (next.length) dailyLog[key] = next
-            else delete dailyLog[key]
+            const t = nowMs()
+            const existing = s.dailyCompletions.find(
+              (c) => c.dailyTaskId === dailyTaskId && c.dateKey === key,
+            )
 
-            // Surface a celebration only when completing (not un-checking).
+            let dailyCompletions: DailyCompletionDTO[]
+            let dirtyKey: string
+            // checkedOn = we are turning the completion ON
+            const checkedOn = !existing || existing.deleted
+
+            if (existing) {
+              dirtyKey = `completion:${existing.id}`
+              dailyCompletions = s.dailyCompletions.map((c) =>
+                c.id === existing.id ? { ...c, deleted: !existing.deleted, updatedAt: t } : c,
+              )
+            } else {
+              const id = uid()
+              dirtyKey = `completion:${id}`
+              dailyCompletions = [
+                ...s.dailyCompletions,
+                { id, dailyTaskId, dateKey: key, createdAt: nowIso(), updatedAt: t, deleted: false },
+              ]
+            }
+
             let celebration = s.celebration
-            if (!has) {
+            if (checkedOn) {
               const activeIds = new Set(
-                s.dailyTasks.filter((d) => !d.archived).map((d) => d.id),
+                s.dailyTasks.filter((d) => !d.deleted && !d.archived).map((d) => d.id),
               )
               const total = activeIds.size
-              const doneActive = next.filter((x) => activeIds.has(x)).length
-              const streak = computeStats(dailyLog).currentStreak
+              const doneActive = new Set(
+                dailyCompletions
+                  .filter((c) => !c.deleted && c.dateKey === key && activeIds.has(c.dailyTaskId))
+                  .map((c) => c.dailyTaskId),
+              ).size
+              const streak = computeStats(buildDailyLog(dailyCompletions)).currentStreak
               if (total > 0 && doneActive === total) {
-                // Completed everything for the day â€” the big one.
                 celebration = { kind: 'allDone', streak, total }
               } else if (doneActive === 1) {
-                // First task logged today â€” hot streak nudge.
                 celebration = { kind: 'logged', streak, total }
               }
             }
 
-            return { dailyLog, celebration }
+            return { dailyCompletions, dirty: { ...s.dirty, [dirtyKey]: true }, celebration }
           }),
+
+        // ---- sync integration ----
+        collectDirty: () => {
+          const s = get()
+          const changes: Partial<SyncChanges> = {
+            lists: [],
+            tasks: [],
+            dailyTasks: [],
+            dailyCompletions: [],
+          }
+          const keys = Object.keys(s.dirty)
+          for (const key of keys) {
+            const sep = key.indexOf(':')
+            const kind = key.slice(0, sep)
+            const id = key.slice(sep + 1)
+            if (kind === 'list') {
+              const r = s.lists.find((x) => x.id === id)
+              if (r) changes.lists!.push(r)
+            } else if (kind === 'task') {
+              const r = s.tasks.find((x) => x.id === id)
+              if (r) changes.tasks!.push(r)
+            } else if (kind === 'dailyTask') {
+              const r = s.dailyTasks.find((x) => x.id === id)
+              if (r) changes.dailyTasks!.push(r)
+            } else if (kind === 'completion') {
+              const r = s.dailyCompletions.find((x) => x.id === id)
+              if (r) changes.dailyCompletions!.push(r)
+            }
+          }
+          return { changes, keys }
+        },
+        applyServerChanges: (changes) =>
+          set((s) => ({
+            lists: mergeById(s.lists, changes.lists ?? []),
+            tasks: mergeById(s.tasks, changes.tasks ?? []),
+            dailyTasks: mergeById(s.dailyTasks, changes.dailyTasks ?? []),
+            dailyCompletions: mergeById(s.dailyCompletions, changes.dailyCompletions ?? []),
+          })),
+        markSynced: (serverNow, keys) =>
+          set((s) => {
+            const dirty = { ...s.dirty }
+            for (const k of keys) delete dirty[k]
+            return { dirty, lastSyncedAt: serverNow }
+          }),
+        importLegacy: () => {
+          const data = convertLegacy()
+          if (!data) return 0
+          set((s) => ({
+            lists: mergeById(s.lists, data.lists),
+            tasks: mergeById(s.tasks, data.tasks),
+            dailyTasks: mergeById(s.dailyTasks, data.dailyTasks),
+            dailyCompletions: mergeById(s.dailyCompletions, data.dailyCompletions),
+            dirty: { ...s.dirty, ...data.dirty },
+            currentListId:
+              s.currentListId ?? data.lists.find((l) => !l.deleted)?.id ?? null,
+          }))
+          return (
+            data.lists.length +
+            data.tasks.length +
+            data.dailyTasks.length +
+            data.dailyCompletions.length
+          )
+        },
       }
     },
     {
-      name: 'tally-store-v1',
-      version: 1,
-      // Persist data + navigation only â€” never the transient celebration popup.
+      name: STORE_KEY,
+      version: 2,
       partialize: (s) => ({
         lists: s.lists,
         tasks: s.tasks,
         dailyTasks: s.dailyTasks,
-        dailyLog: s.dailyLog,
+        dailyCompletions: s.dailyCompletions,
+        dirty: s.dirty,
+        lastSyncedAt: s.lastSyncedAt,
         screen: s.screen,
         currentListId: s.currentListId,
       }),

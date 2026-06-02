@@ -2,11 +2,12 @@
 import { useStore } from '../store'
 import { todayKey, formatLongDate } from '@targetgoals/shared'
 import { computeStats } from '@targetgoals/shared'
+import { buildDailyLog } from '../lib/transform'
 import { CheckCircle, Circle, Flame, Plus, Trash } from './Icons'
 
 export function DailyScreen() {
-  const dailyTasks = useStore((s) => s.dailyTasks)
-  const dailyLog = useStore((s) => s.dailyLog)
+  const allDailyTasks = useStore((s) => s.dailyTasks)
+  const completions = useStore((s) => s.dailyCompletions)
   const addDailyTask = useStore((s) => s.addDailyTask)
   const deleteDailyTask = useStore((s) => s.deleteDailyTask)
   const renameDailyTask = useStore((s) => s.renameDailyTask)
@@ -17,11 +18,12 @@ export function DailyScreen() {
   const [editDraft, setEditDraft] = useState('')
 
   const key = todayKey()
-  const doneToday = useMemo(
-    () => new Set(dailyLog[key] ?? []),
-    [dailyLog, key],
+  const dailyLog = useMemo(() => buildDailyLog(completions), [completions])
+  const doneToday = useMemo(() => new Set(dailyLog[key] ?? []), [dailyLog, key])
+  const active = useMemo(
+    () => allDailyTasks.filter((d) => !d.deleted && !d.archived),
+    [allDailyTasks],
   )
-  const active = dailyTasks.filter((d) => !d.archived)
   const completedCount = active.filter((d) => doneToday.has(d.id)).length
   const pct = active.length ? Math.round((completedCount / active.length) * 100) : 0
   const stats = useMemo(() => computeStats(dailyLog), [dailyLog])

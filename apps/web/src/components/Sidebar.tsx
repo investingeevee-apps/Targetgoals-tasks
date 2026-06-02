@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { Chart, ListIcon, Plus, Repeat } from './Icons'
+import { SyncStatusButton } from './SyncSettings'
 
 export function Sidebar() {
-  const lists = useStore((s) => s.lists)
+  const allLists = useStore((s) => s.lists)
+  const lists = useMemo(() => allLists.filter((l) => !l.deleted), [allLists])
   const screen = useStore((s) => s.screen)
   const currentListId = useStore((s) => s.currentListId)
   const selectList = useStore((s) => s.selectList)
@@ -114,8 +116,8 @@ export function Sidebar() {
         )}
       </nav>
 
-      <div className="border-t border-slate-800 px-5 py-3 text-xs text-slate-500">
-        Saved locally on this device
+      <div className="border-t border-slate-800 p-2">
+        <SyncStatusButton />
       </div>
     </aside>
   )

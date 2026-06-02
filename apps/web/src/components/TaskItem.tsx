@@ -1,9 +1,9 @@
 ﻿import { useStore } from '../store'
-import type { Task } from '@targetgoals/shared'
+import type { TaskDTO } from '@targetgoals/shared'
 import { formatDue, isOverdue } from '@targetgoals/shared'
 import { Calendar, CheckCircle, Circle, Star } from './Icons'
 
-export function TaskItem({ task }: { task: Task }) {
+export function TaskItem({ task }: { task: TaskDTO }) {
   const toggleTask = useStore((s) => s.toggleTask)
   const toggleStar = useStore((s) => s.toggleStar)
   const selectTask = useStore((s) => s.selectTask)

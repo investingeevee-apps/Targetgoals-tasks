@@ -284,8 +284,12 @@ under Android Doze; no server push needed):
 - [x] **Phase B — Server.** Express + SQLite (libSQL/Drizzle) schema, REST + `/sync`
   (push+pull, last‑write‑wins, tombstones), bearer‑token auth, `/pair` QR page, and
   it serves the built web app. Lives in `apps/server`. ✅
-- [ ] **Phase C — Web on server.** Refactor web persistence from localStorage →
-  API + offline cache; keep PWA; add the **one‑time localStorage import**.
+- [x] **Phase C — Web on server.** Sync-native store (DTO rows + `updatedAt` +
+  deleted tombstones), offline-first sync engine (push+pull, debounced on edit +
+  25 s timer + on reconnect), connection UI with status, and one-time legacy import.
+  Verified bidirectional sync end-to-end. ✅
+  - [ ] **C.1 — PWA installability** (manifest + service worker via `vite-plugin-pwa`)
+    so the web app can be added to a phone home screen. *Deferred from C.*
 - [ ] **Phase D — Windows service + Tailscale.** Auto‑start service scripts; docs
   for joining the tailnet and finding the server URL.
 - [ ] **Phase E — Android app.** Expo app: Daily + Overview, expo‑sqlite cache,

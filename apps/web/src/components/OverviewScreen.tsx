@@ -2,6 +2,7 @@
 import { useStore } from '../store'
 import { computeStats } from '@targetgoals/shared'
 import { formatLongDate } from '@targetgoals/shared'
+import { buildDailyLog } from '../lib/transform'
 import { Heatmap } from './Heatmap'
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -17,11 +18,12 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
 }
 
 export function OverviewScreen() {
-  const dailyLog = useStore((s) => s.dailyLog)
+  const completions = useStore((s) => s.dailyCompletions)
   const dailyTasks = useStore((s) => s.dailyTasks)
 
+  const dailyLog = useMemo(() => buildDailyLog(completions), [completions])
   const stats = useMemo(() => computeStats(dailyLog), [dailyLog])
-  const activeHabits = dailyTasks.filter((d) => !d.archived).length
+  const activeHabits = dailyTasks.filter((d) => !d.deleted && !d.archived).length
 
   return (
     <div className="mx-auto w-full max-w-4xl flex-1 overflow-y-auto px-6 py-8">

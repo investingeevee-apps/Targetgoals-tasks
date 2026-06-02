@@ -1,8 +1,8 @@
 ﻿import { useStore } from '../store'
-import type { Task } from '@targetgoals/shared'
+import type { TaskDTO } from '@targetgoals/shared'
 import { Close, Star, Trash } from './Icons'
 
-export function TaskDetail({ task }: { task: Task }) {
+export function TaskDetail({ task }: { task: TaskDTO }) {
   const updateTask = useStore((s) => s.updateTask)
   const toggleStar = useStore((s) => s.toggleStar)
   const deleteTask = useStore((s) => s.deleteTask)
@@ -56,14 +56,14 @@ export function TaskDetail({ task }: { task: Task }) {
               type="date"
               value={task.due ?? ''}
               onChange={(e) =>
-                updateTask(task.id, { due: e.target.value || undefined })
+                updateTask(task.id, { due: e.target.value || null })
               }
               className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-accent"
             />
             {task.due && (
               <button
                 className="rounded-lg px-2 py-2 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-                onClick={() => updateTask(task.id, { due: undefined })}
+                onClick={() => updateTask(task.id, { due: null })}
               >
                 Clear
               </button>

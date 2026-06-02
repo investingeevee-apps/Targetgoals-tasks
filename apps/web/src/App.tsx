@@ -1,17 +1,24 @@
+import { useEffect } from 'react'
 import { useStore } from './store'
+import { initSync } from './sync/store'
 import { Sidebar } from './components/Sidebar'
 import { TasksScreen } from './components/TasksScreen'
 import { DailyScreen } from './components/DailyScreen'
 import { OverviewScreen } from './components/OverviewScreen'
 import { TaskDetail } from './components/TaskDetail'
 import { Celebration } from './components/Celebration'
+import { SyncSettingsModal } from './components/SyncSettings'
 
 export default function App() {
   const screen = useStore((s) => s.screen)
   const selectedTaskId = useStore((s) => s.selectedTaskId)
   const selectedTask = useStore((s) =>
-    s.tasks.find((t) => t.id === s.selectedTaskId),
+    s.tasks.find((t) => t.id === s.selectedTaskId && !t.deleted),
   )
+
+  useEffect(() => {
+    initSync()
+  }, [])
 
   return (
     <div className="flex h-full bg-slate-900 text-slate-100">
@@ -30,6 +37,7 @@ export default function App() {
       </main>
 
       <Celebration />
+      <SyncSettingsModal />
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { TaskItem } from './TaskItem'
 export function TasksScreen() {
   const currentListId = useStore((s) => s.currentListId)
   const list = useStore((s) =>
-    s.lists.find((l) => l.id === s.currentListId),
+    s.lists.find((l) => l.id === s.currentListId && !l.deleted),
   )
   const tasks = useStore((s) => s.tasks)
   const addTask = useStore((s) => s.addTask)
@@ -19,7 +19,7 @@ export function TasksScreen() {
   const [nameDraft, setNameDraft] = useState('')
 
   const { active, done } = useMemo(() => {
-    const mine = tasks.filter((t) => t.listId === currentListId)
+    const mine = tasks.filter((t) => t.listId === currentListId && !t.deleted)
     const byStarThenCreated = (a: typeof mine[number], b: typeof mine[number]) => {
       if (a.starred !== b.starred) return a.starred ? -1 : 1
       return a.createdAt.localeCompare(b.createdAt)

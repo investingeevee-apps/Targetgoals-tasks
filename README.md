@@ -112,6 +112,12 @@ Endpoints: `GET /api/health` (open), `POST /api/sync` (push+pull), `GET /api/syn
 `Authorization: Bearer <token>`. See [`docs/PLAN.md`](docs/PLAN.md) for the full
 architecture (Tailscale, HTTPS, offline-first clients).
 
+**Connecting the web app:** start the server, run the web app, then click the status
+chip at the bottom of the sidebar (“Local only”) → enter the server URL + token from
+`/pair` → **Connect**. The web app is **offline-first**: it keeps working with no
+connection and syncs (last-write-wins) when the server is reachable. Existing
+single-device data is offered as a one-time **import**.
+
 ## Publishing to GitHub
 
 This repo is initialized locally. To publish it:
