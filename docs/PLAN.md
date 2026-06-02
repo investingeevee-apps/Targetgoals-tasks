@@ -291,8 +291,10 @@ under Android Doze; no server push needed):
   - [x] **C.1 — PWA installability** (manifest + service worker via `vite-plugin-pwa`,
     `autoUpdate`, offline precache + SPA fallback, maskable icon) so the web app can be
     added to a phone home screen. ✅
-- [ ] **Phase D — Windows service + Tailscale.** Auto‑start service scripts; docs
-  for joining the tailnet and finding the server URL.
+- [x] **Phase D — Windows service + Tailscale.** Zero-dependency auto-start scripts
+  (`service:install`/`uninstall` via Task Scheduler) and a full self-hosting guide
+  (`docs/SELF-HOSTING.md`): keep-alive options (Task Scheduler / node-windows / NSSM /
+  systemd), Tailscale join, and `tailscale serve` HTTPS. ✅
 - [ ] **Phase E — Android app.** Expo app: Daily + Overview, expo‑sqlite cache,
   shared sync engine, QR pairing, celebrations.
 - [ ] **Phase F — Widget.** `react-native-android-widget` (two sizes), WorkManager

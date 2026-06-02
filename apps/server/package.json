@@ -10,7 +10,9 @@
     "predev": "tsc -b ../../packages/shared",
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "service:install": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts/install-service.ps1",
+    "service:uninstall": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts/uninstall-service.ps1"
   },
   "dependencies": {
     "@targetgoals/shared": "*",

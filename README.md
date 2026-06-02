@@ -107,6 +107,10 @@ npm run dev:server        # start on http://localhost:4000
 # then open http://localhost:4000/pair to scan/copy the pairing QR + token
 ```
 
+To keep it running and reach it from your phone anywhere, see
+**[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)** — Windows auto-start
+(`npm run service:install -w @targetgoals/server`), Tailscale, and HTTPS setup.
+
 Endpoints: `GET /api/health` (open), `POST /api/sync` (push+pull), `GET /api/sync?since=`
 (pull), `GET /api/state`, and `GET /pair`. All `/api/*` except health require
 `Authorization: Bearer <token>`. See [`docs/PLAN.md`](docs/PLAN.md) for the full
