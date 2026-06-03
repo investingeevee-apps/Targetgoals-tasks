@@ -1,8 +1,61 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { useStore } from '../store'
 import { useSync, type SyncStatus } from '../sync/store'
 import { hasLegacyData } from '../lib/transform'
 import { Close } from './Icons'
+
+/** Section that shows a scannable QR so a phone can pair with this server. */
+function PairDevice({ token }: { token: string }) {
+  const [addr, setAddr] = useState('')
+  useEffect(() => {
+    // Default to this page's origin; the user edits it to a phone-reachable
+    // address (LAN IP or Tailscale URL) since "localhost" won't work on a phone.
+    if (typeof window !== 'undefined') setAddr(window.location.origin)
+  }, [])
+
+  const url = addr.trim().replace(/\/+$/, '')
+  const payload = useMemo(
+    () => JSON.stringify({ url, token, name: 'TargetGoals Tasks' }),
+    [url, token],
+  )
+  const isLocal = /localhost|127\.0\.0\.1/.test(url)
+
+  return (
+    <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+      <div className="text-sm font-semibold text-slate-200">Pair a phone</div>
+      <p className="mt-1 text-xs text-slate-400">
+        Scan this in the Android app (Sync → Scan pairing QR).
+      </p>
+
+      <label className="mb-1 mt-3 block text-xs font-medium text-slate-500">
+        Address the phone should use
+      </label>
+      <input
+        value={addr}
+        onChange={(e) => setAddr(e.target.value)}
+        placeholder="http://192.168.x.x:4000 or https://your-pc.tailnet.ts.net"
+        className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-accent"
+      />
+
+      {isLocal ? (
+        <div className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+          “localhost” only works on this computer. Enter your <strong>LAN IP</strong>{' '}
+          (e.g. http://192.168.1.50:4000) or your <strong>Tailscale</strong> URL so the
+          phone can reach it.
+        </div>
+      ) : (
+        url && (
+          <div className="mt-3 flex justify-center">
+            <div className="rounded-xl bg-white p-3">
+              <QRCodeSVG value={payload} size={184} />
+            </div>
+          </div>
+        )
+      )}
+    </div>
+  )
+}
 
 const STATUS_META: Record<SyncStatus, { label: string; dot: string; pulse?: boolean }> = {
   disconnected: { label: 'Local only', dot: 'bg-slate-500' },
@@ -167,6 +220,8 @@ export function SyncSettingsModal() {
             <span>Status: {meta.label}</span>
             {connected && <span>Last synced {relativeTime(lastSyncedAt)}</span>}
           </div>
+
+          {connected && savedToken && <PairDevice token={savedToken} />}
 
           {hasLegacyData() && (
             <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-3">

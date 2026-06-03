@@ -94,3 +94,11 @@ export const Flame = (p: P) => (
     <path d="M12 2s5 4 5 9a5 5 0 01-10 0c0-1.5.6-2.8 1.4-3.8C9 9 9 7.5 8.5 6 10.5 6.5 12 4 12 2z" />
   </svg>
 )
+
+export const Help = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.5 9.5a2.5 2.5 0 113.5 2.3c-.8.4-1 .8-1 1.7" />
+    <path d="M12 17h.01" />
+  </svg>
+)

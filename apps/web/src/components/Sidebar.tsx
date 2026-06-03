@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store'
-import { Chart, ListIcon, Plus, Repeat } from './Icons'
+import { Chart, Help, ListIcon, Plus, Repeat } from './Icons'
 import { SyncStatusButton } from './SyncSettings'
 
 export function Sidebar() {
@@ -63,6 +63,17 @@ export function Sidebar() {
         >
           <Chart width={18} height={18} />
           Overview
+        </button>
+        <button
+          className={`${navBtn} ${
+            screen === 'help'
+              ? 'bg-accent/15 text-accent'
+              : 'text-slate-300 hover:bg-slate-800/60'
+          }`}
+          onClick={() => setScreen('help')}
+        >
+          <Help width={18} height={18} />
+          Setup &amp; help
         </button>
 
         <div className="px-3 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">

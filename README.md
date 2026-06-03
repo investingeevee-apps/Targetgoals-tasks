@@ -4,12 +4,29 @@ A local-first, open-source task manager inspired by Google Tasks — with a twis
 a **daily tasks** list that resets every day and tracks your completions over time
 in a Claude-style **Overview** (streaks, active days, and a contribution heatmap).
 
-Everything is stored in your browser's `localStorage`. There is no backend, no
-account, and no data leaves your machine.
+Use it **solo** (all local, no account, no backend), or run your own tiny **sync
+server** to keep a desktop browser, an installable PWA, and an **Android app** (with a
+home‑screen widget + reminders) in sync — reachable from anywhere over **Tailscale**,
+with your data never leaving your machines.
 
 | Tasks | Daily | Overview |
 | --- | --- | --- |
 | Classic lists with notes, due dates & stars | Recurring habits that reset daily | Streaks + activity heatmap |
+
+## Get started
+
+1. **Run it / install it on your computer.** `npm install`, `npm run build`, then start
+   the server (`npm run start:server`) and open **http://localhost:4000**. In Chrome/Edge,
+   use the address‑bar **install** icon to pin it to your desktop as an app. (Or just
+   `npm run dev` for the dev server.)
+2. **Keep the server running** so the desktop app and phone always work — auto‑start at
+   login, no admin: `npm run startup:install -w @targetgoals/server`.
+3. **Pair your phone.** Install the Android app (Releases / [docs/ANDROID.md](docs/ANDROID.md)),
+   then in the desktop app's **Sync settings** show the pairing **QR** (enter your LAN IP
+   or Tailscale URL so the phone can reach it) and scan it from the app.
+4. **Reach it from anywhere** with [Tailscale](https://tailscale.com) — see
+   [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md). The in‑app **Setup & Help** page walks
+   through all of this too.
 
 ## Features
 
@@ -36,7 +53,7 @@ and attached to the GitHub Release.
 
 ## Tech stack
 
-- [Vite](https://vite.dev/) + [React 18](https://react.dev/) + TypeScript
+- [Vite](https://vite.dev/) + [React 19](https://react.dev/) + TypeScript
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [Zustand](https://github.com/pmndrs/zustand) (with the `persist` middleware) for
   state and localStorage persistence

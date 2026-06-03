@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar'
 import { TasksScreen } from './components/TasksScreen'
 import { DailyScreen } from './components/DailyScreen'
 import { OverviewScreen } from './components/OverviewScreen'
+import { HelpScreen } from './components/HelpScreen'
 import { TaskDetail } from './components/TaskDetail'
 import { Celebration } from './components/Celebration'
 import { SyncSettingsModal } from './components/SyncSettings'
@@ -29,6 +30,7 @@ export default function App() {
           {screen === 'tasks' && <TasksScreen />}
           {screen === 'daily' && <DailyScreen />}
           {screen === 'overview' && <OverviewScreen />}
+          {screen === 'help' && <HelpScreen />}
         </div>
 
         {screen === 'tasks' && selectedTaskId && selectedTask && (

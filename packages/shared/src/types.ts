@@ -38,7 +38,7 @@ export interface DailyTask {
 /** dateKey ('YYYY-MM-DD') -> ids of daily tasks completed that day. */
 export type DailyLog = Record<string, ID[]>
 
-export type Screen = 'tasks' | 'daily' | 'overview'
+export type Screen = 'tasks' | 'daily' | 'overview' | 'help'
 
 /**
  * A transient celebration event surfaced as a popup. Not persisted.
