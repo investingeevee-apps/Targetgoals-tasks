@@ -104,6 +104,24 @@ notification permission the first time they're enabled.
 > still work there, they just take effect once you install a dev/preview build
 > (same `eas build` flow as the widget).
 
+## Over-the-air (OTA) updates — push JS changes without rebuilding
+
+The app uses **expo-updates** + **EAS Update**, so after the **first** APK build that
+includes expo-updates, most changes (anything JS-only — screens, logic, fixes) can be
+pushed **over the air** without a new APK:
+
+```bash
+cd apps/mobile
+npx eas-cli update --branch preview --message "what changed"
+```
+
+On the phone, the app checks for an update on launch and when it's foregrounded; when
+one is found it downloads it and shows a **"new version is ready — Restart"** banner.
+
+> **Still needs a full rebuild** when you add/upgrade a *native* module or bump the
+> Expo SDK (the `runtimeVersion` changes). JS-only changes go OTA. Build profiles map to
+> update channels (`preview` / `production`) in `eas.json`.
+
 ## Notes & limitations
 
 - Local data is cached with **AsyncStorage** (small dataset; `expo-sqlite` is a

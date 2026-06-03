@@ -7,6 +7,10 @@
     "scheme": "targetgoals",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0b1220",
+    "runtimeVersion": { "policy": "appVersion" },
+    "updates": {
+      "url": "https://u.expo.dev/6f90eccc-4125-4230-b256-9efe5cdab72f"
+    },
     "android": {
       "package": "com.targetgoals.tasks",
       "edgeToEdgeEnabled": true,

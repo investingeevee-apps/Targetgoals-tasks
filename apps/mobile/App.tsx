@@ -11,6 +11,7 @@ import { OverviewScreen } from './src/screens/OverviewScreen'
 import { SettingsScreen } from './src/screens/SettingsScreen'
 import { Celebration } from './src/components/Celebration'
 import { TaskDetailModal } from './src/components/TaskDetailModal'
+import { UpdateBanner } from './src/components/UpdateBanner'
 import { colors } from './src/theme'
 
 const TABS: { key: MobileScreen; label: string; icon: string }[] = [
@@ -63,6 +64,7 @@ export default function App() {
 
         <Celebration />
         <TaskDetailModal />
+        <UpdateBanner />
       </SafeAreaView>
     </SafeAreaProvider>
   )
