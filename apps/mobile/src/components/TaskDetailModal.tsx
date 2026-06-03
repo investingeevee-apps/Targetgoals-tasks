@@ -22,12 +22,22 @@ export function TaskDetailModal() {
   const toggleSubtask = useStore((s) => s.toggleSubtask)
   const renameSubtask = useStore((s) => s.renameSubtask)
   const deleteSubtask = useStore((s) => s.deleteSubtask)
+  const reorderSubtasks = useStore((s) => s.reorderSubtasks)
 
   const [subDraft, setSubDraft] = useState('')
 
   const open = screen === 'tasks' && !!task
   if (!task) return null
   const subDone = task.subtasks.filter((st) => st.completed).length
+  const tid = task.id
+  function moveSub(subId: string, dir: 'up' | 'down') {
+    const ids = task!.subtasks.map((s) => s.id)
+    const i = ids.indexOf(subId)
+    const j = dir === 'up' ? i - 1 : i + 1
+    if (j < 0 || j >= ids.length) return
+    ;[ids[i], ids[j]] = [ids[j], ids[i]]
+    reorderSubtasks(tid, ids)
+  }
 
   return (
     <Modal transparent visible={open} animationType="slide" onRequestClose={() => selectTask(null)}>
@@ -59,6 +69,14 @@ export function TaskDetailModal() {
             </Text>
             {task.subtasks.map((st) => (
               <View key={st.id} style={styles.subRow}>
+                <View style={styles.subMoveCol}>
+                  <Pressable onPress={() => moveSub(st.id, 'up')} hitSlop={6}>
+                    <Text style={styles.subMoveBtn}>▲</Text>
+                  </Pressable>
+                  <Pressable onPress={() => moveSub(st.id, 'down')} hitSlop={6}>
+                    <Text style={styles.subMoveBtn}>▼</Text>
+                  </Pressable>
+                </View>
                 <Pressable onPress={() => toggleSubtask(task.id, st.id)} hitSlop={8}>
                   <View style={[styles.subCheck, st.completed && styles.subCheckDone]}>
                     {st.completed && <Text style={styles.subMark}>✓</Text>}
@@ -149,7 +167,9 @@ const styles = StyleSheet.create({
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15,
   },
   titleInput: { fontSize: 16, fontWeight: '600' },
-  subRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
+  subMoveCol: { justifyContent: 'center' },
+  subMoveBtn: { color: colors.textFaint, fontSize: 10, lineHeight: 13 },
   subCheck: {
     width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.textFaint,
     alignItems: 'center', justifyContent: 'center',

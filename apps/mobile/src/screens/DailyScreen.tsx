@@ -12,6 +12,7 @@ export function DailyScreen() {
   const deleteDailyTask = useStore((s) => s.deleteDailyTask)
   const renameDailyTask = useStore((s) => s.renameDailyTask)
   const toggleDailyToday = useStore((s) => s.toggleDailyToday)
+  const reorderDailyTasks = useStore((s) => s.reorderDailyTasks)
 
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -21,6 +22,15 @@ export function DailyScreen() {
     if (editingId) renameDailyTask(editingId, editDraft)
     setEditingId(null)
     setEditDraft('')
+  }
+
+  function move(id: string, dir: 'up' | 'down') {
+    const ids = active.map((d) => d.id)
+    const i = ids.indexOf(id)
+    const j = dir === 'up' ? i - 1 : i + 1
+    if (j < 0 || j >= ids.length) return
+    ;[ids[i], ids[j]] = [ids[j], ids[i]]
+    reorderDailyTasks(ids)
   }
 
   const key = todayKey()
@@ -87,6 +97,16 @@ export function DailyScreen() {
         const editing = editingId === d.id
         return (
           <View key={d.id} style={styles.taskRow}>
+            {!editing && (
+              <View style={styles.moveCol}>
+                <Pressable onPress={() => move(d.id, 'up')} hitSlop={6}>
+                  <Text style={styles.moveBtn}>▲</Text>
+                </Pressable>
+                <Pressable onPress={() => move(d.id, 'down')} hitSlop={6}>
+                  <Text style={styles.moveBtn}>▼</Text>
+                </Pressable>
+              </View>
+            )}
             <Pressable onPress={() => toggleDailyToday(d.id)} hitSlop={8}>
               <View style={[styles.check, done && styles.checkDone]}>
                 {done && <Text style={styles.checkMark}>✓</Text>}
@@ -157,7 +177,9 @@ const styles = StyleSheet.create({
   addPlus: { color: colors.accent, fontSize: 18, fontWeight: '700' },
   addInput: { flex: 1, color: colors.text, fontSize: 15, paddingVertical: 4 },
   empty: { color: colors.textFaint, textAlign: 'center', marginTop: 40 },
-  taskRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  moveCol: { justifyContent: 'center' },
+  moveBtn: { color: colors.textFaint, fontSize: 11, lineHeight: 14 },
   check: {
     width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors.textFaint,
     alignItems: 'center', justifyContent: 'center',
