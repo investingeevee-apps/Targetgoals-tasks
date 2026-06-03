@@ -15,7 +15,9 @@
       "package": "com.targetgoals.tasks",
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "android.permission.CAMERA",
+        "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ]
     },

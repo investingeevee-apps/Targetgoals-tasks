@@ -66,10 +66,10 @@ export const useSync = create<SyncState>()(
         set({ status: 'syncing' })
         try {
           const main = useStore.getState()
-          const { changes, keys } = main.collectDirty()
+          const { changes, synced } = main.collectDirty()
           const res = await postSync(url, token, { since: main.lastSyncedAt, changes })
           useStore.getState().applyServerChanges(res.changes)
-          useStore.getState().markSynced(res.now, keys)
+          useStore.getState().markSynced(res.now, synced)
           set({ status: 'idle', lastError: null })
         } catch (e) {
           set({ status: 'error', lastError: (e as Error).message })

@@ -5,16 +5,6 @@ import { buildDailyLog } from '../lib/transform'
 import { useStore } from '../store'
 import { useNotifPrefs } from './store'
 
-// Show a banner even when the app is foregrounded.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-})
-
 const CHANNEL = 'reminders'
 
 async function ensurePermission(): Promise<boolean> {
@@ -31,6 +21,7 @@ function todayAt(hhmm: string): Date {
 }
 
 let busy = false
+let pending = false
 
 /**
  * Cancel and re-schedule local notifications from the current habit state.
@@ -39,7 +30,12 @@ let busy = false
  * only scheduled while a streak is genuinely on the line.
  */
 export async function syncNotifications(): Promise<void> {
-  if (busy) return
+  // If a run is in progress, remember that state changed and re-run once it
+  // finishes — so rapid habit toggles don't drop the final reschedule.
+  if (busy) {
+    pending = true
+    return
+  }
   busy = true
   try {
     await Notifications.cancelAllScheduledNotificationsAsync()
@@ -96,6 +92,10 @@ export async function syncNotifications(): Promise<void> {
     // notifications can be limited in Expo Go; ignore failures
   } finally {
     busy = false
+    if (pending) {
+      pending = false
+      void syncNotifications()
+    }
   }
 }
 
@@ -104,6 +104,17 @@ let started = false
 export function initNotifications(): void {
   if (started) return
   started = true
+
+  // Set the foreground handler here (not at import time) so it only runs once the
+  // app has decided notifications are safe to initialize in this environment.
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  })
 
   void syncNotifications()
 

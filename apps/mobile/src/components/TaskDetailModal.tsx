@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { addDays, formatDue, todayKey } from '@targetgoals/shared'
 import { useStore } from '../store'
@@ -25,6 +25,17 @@ export function TaskDetailModal() {
   const reorderSubtasks = useStore((s) => s.reorderSubtasks)
 
   const [subDraft, setSubDraft] = useState('')
+  // Edit title/notes locally and commit on blur (avoids per-keystroke store
+  // writes and the controlled-input "snap back" when clearing a field).
+  const [titleDraft, setTitleDraft] = useState('')
+  const [notesDraft, setNotesDraft] = useState('')
+  useEffect(() => {
+    if (task) {
+      setTitleDraft(task.title)
+      setNotesDraft(task.notes)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id])
 
   const open = screen === 'tasks' && !!task
   if (!task) return null
@@ -49,16 +60,26 @@ export function TaskDetailModal() {
             <Text style={styles.label}>Title</Text>
             <TextInput
               style={[styles.input, styles.titleInput]}
-              value={task.title}
-              onChangeText={(title) => updateTask(task.id, { title })}
+              value={titleDraft}
+              onChangeText={setTitleDraft}
+              onBlur={() => {
+                if (titleDraft.trim() && titleDraft !== task.title) {
+                  updateTask(task.id, { title: titleDraft })
+                } else if (!titleDraft.trim()) {
+                  setTitleDraft(task.title) // restore — a task can't be blank
+                }
+              }}
               multiline
             />
 
             <Text style={styles.label}>Notes</Text>
             <TextInput
               style={[styles.input, styles.notesInput]}
-              value={task.notes}
-              onChangeText={(notes) => updateTask(task.id, { notes })}
+              value={notesDraft}
+              onChangeText={setNotesDraft}
+              onBlur={() => {
+                if (notesDraft !== task.notes) updateTask(task.id, { notes: notesDraft })
+              }}
               placeholder="Add details…"
               placeholderTextColor={colors.textFaint}
               multiline
@@ -83,9 +104,13 @@ export function TaskDetailModal() {
                   </View>
                 </Pressable>
                 <TextInput
+                  key={`${st.id}:${st.title}`}
                   style={[styles.subInput, st.completed && styles.subInputDone]}
-                  value={st.title}
-                  onChangeText={(title) => renameSubtask(task.id, st.id, title)}
+                  defaultValue={st.title}
+                  onEndEditing={(e) => {
+                    const v = e.nativeEvent.text
+                    if (v.trim() && v !== st.title) renameSubtask(task.id, st.id, v)
+                  }}
                 />
                 <Pressable onPress={() => deleteSubtask(task.id, st.id)} hitSlop={8}>
                   <Text style={styles.subTrash}>🗑</Text>
