@@ -21,7 +21,10 @@ export function DailyScreen() {
   const dailyLog = useMemo(() => buildDailyLog(completions), [completions])
   const doneToday = useMemo(() => new Set(dailyLog[key] ?? []), [dailyLog, key])
   const active = useMemo(
-    () => allDailyTasks.filter((d) => !d.deleted && !d.archived),
+    () =>
+      allDailyTasks
+        .filter((d) => !d.deleted && !d.archived)
+        .sort((a, b) => a.order - b.order || a.createdAt.localeCompare(b.createdAt)),
     [allDailyTasks],
   )
   const completedCount = active.filter((d) => doneToday.has(d.id)).length

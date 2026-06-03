@@ -122,7 +122,7 @@ export function convertLegacy(): StoreData | null {
     }
   })
 
-  const dailyTasks: DailyTaskDTO[] = (s.dailyTasks ?? []).map((d) => {
+  const dailyTasks: DailyTaskDTO[] = (s.dailyTasks ?? []).map((d, i) => {
     dirty[`dailyTask:${d.id}`] = true
     return {
       id: d.id,
@@ -131,6 +131,7 @@ export function convertLegacy(): StoreData | null {
       createdAt: d.createdAt,
       updatedAt: t,
       deleted: false,
+      order: i,
     }
   })
 
@@ -200,9 +201,9 @@ export function seedData(): StoreData {
   ]
 
   const dailyTasks: DailyTaskDTO[] = [
-    { id: uid(), title: 'Drink water', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
-    { id: uid(), title: 'Exercise', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
-    { id: uid(), title: 'Read 10 pages', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
+    { id: uid(), title: 'Drink water', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false, order: 0 },
+    { id: uid(), title: 'Exercise', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false, order: 1 },
+    { id: uid(), title: 'Read 10 pages', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false, order: 2 },
   ]
 
   return {

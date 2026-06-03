@@ -48,6 +48,8 @@ export interface DailyTaskDTO extends SyncMeta {
   title: string
   archived: boolean
   createdAt: string
+  /** Manual sort position (ascending). */
+  order: number
 }
 
 export interface DailyCompletionDTO extends SyncMeta {

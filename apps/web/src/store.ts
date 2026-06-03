@@ -74,18 +74,21 @@ interface State {
   deleteTask: (id: ID) => void
   clearCompleted: (listId: ID) => void
   moveTask: (id: ID, dir: 'up' | 'down') => void
+  reorderTasks: (listId: ID, orderedIds: ID[]) => void
 
   // ---- subtasks ----
   addSubtask: (taskId: ID, title: string) => void
   toggleSubtask: (taskId: ID, subtaskId: ID) => void
   renameSubtask: (taskId: ID, subtaskId: ID, title: string) => void
   deleteSubtask: (taskId: ID, subtaskId: ID) => void
+  reorderSubtasks: (taskId: ID, orderedIds: ID[]) => void
 
   // ---- daily tasks ----
   addDailyTask: (title: string) => void
   renameDailyTask: (id: ID, title: string) => void
   deleteDailyTask: (id: ID) => void
   toggleDailyToday: (id: ID) => void
+  reorderDailyTasks: (orderedIds: ID[]) => void
 
   // ---- sync integration (called by the sync engine) ----
   collectDirty: () => { changes: Partial<SyncChanges>; keys: string[] }
@@ -275,6 +278,22 @@ export const useStore = create<State>()(
             })
             return { tasks, dirty }
           }),
+        reorderTasks: (listId, orderedIds) =>
+          set((s) => {
+            const pos = new Map(orderedIds.map((id, i) => [id, i]))
+            const now = nowMs()
+            const dirty = { ...s.dirty }
+            const tasks = s.tasks.map((t) => {
+              if (t.listId !== listId) return t
+              const next = pos.get(t.id)
+              if (next !== undefined && t.order !== next) {
+                dirty[`task:${t.id}`] = true
+                return { ...t, order: next, updatedAt: now }
+              }
+              return t
+            })
+            return { tasks, dirty }
+          }),
 
         // ---- subtasks ----
         addSubtask: (taskId, title) => {
@@ -332,6 +351,18 @@ export const useStore = create<State>()(
             ),
             dirty: dirtyWith(s, 'task', taskId),
           })),
+        reorderSubtasks: (taskId, orderedIds) =>
+          set((s) => ({
+            tasks: s.tasks.map((t) => {
+              if (t.id !== taskId) return t
+              const byId = new Map(t.subtasks.map((st) => [st.id, st]))
+              const subtasks = orderedIds
+                .map((id) => byId.get(id))
+                .filter((st): st is NonNullable<typeof st> => st !== undefined)
+              return { ...t, subtasks, updatedAt: nowMs() }
+            }),
+            dirty: dirtyWith(s, 'task', taskId),
+          })),
 
         // ---- daily tasks ----
         addDailyTask: (title) => {
@@ -341,7 +372,16 @@ export const useStore = create<State>()(
           set((s) => ({
             dailyTasks: [
               ...s.dailyTasks,
-              { id, title: trimmed, archived: false, createdAt: nowIso(), updatedAt: nowMs(), deleted: false },
+              {
+                id,
+                title: trimmed,
+                archived: false,
+                createdAt: nowIso(),
+                updatedAt: nowMs(),
+                deleted: false,
+                order:
+                  Math.max(0, ...s.dailyTasks.filter((d) => !d.deleted).map((d) => d.order + 1)),
+              },
             ],
             dirty: dirtyWith(s, 'dailyTask', id),
           }))
@@ -418,6 +458,21 @@ export const useStore = create<State>()(
             }
 
             return { dailyCompletions, dirty: { ...s.dirty, [dirtyKey]: true }, celebration }
+          }),
+        reorderDailyTasks: (orderedIds) =>
+          set((s) => {
+            const pos = new Map(orderedIds.map((id, i) => [id, i]))
+            const now = nowMs()
+            const dirty = { ...s.dirty }
+            const dailyTasks = s.dailyTasks.map((d) => {
+              const next = pos.get(d.id)
+              if (next !== undefined && d.order !== next) {
+                dirty[`dailyTask:${d.id}`] = true
+                return { ...d, order: next, updatedAt: now }
+              }
+              return d
+            })
+            return { dailyTasks, dirty }
           }),
 
         // ---- sync integration ----

@@ -48,9 +48,9 @@ export function buildDailyLog(completions: DailyCompletionDTO[]): DailyLog {
 export function seedData(): StoreData {
   const t = nowMs()
   const dailyTasks: DailyTaskDTO[] = [
-    { id: uid(), title: 'Drink water', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
-    { id: uid(), title: 'Exercise', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
-    { id: uid(), title: 'Read 10 pages', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false },
+    { id: uid(), title: 'Drink water', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false, order: 0 },
+    { id: uid(), title: 'Exercise', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false, order: 1 },
+    { id: uid(), title: 'Read 10 pages', archived: false, createdAt: nowIso(), updatedAt: t, deleted: false, order: 2 },
   ]
   return { lists: [], tasks: [], dailyTasks, dailyCompletions: [], dirty: {}, lastSyncedAt: 0 }
 }

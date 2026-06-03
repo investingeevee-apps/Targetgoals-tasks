@@ -38,6 +38,7 @@ export const dailyTasks = sqliteTable('daily_tasks', {
   createdAt: text('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
   deleted: integer('deleted', { mode: 'boolean' }).notNull().default(false),
+  order: integer('sort_order').notNull().default(0),
 })
 
 export const dailyCompletions = sqliteTable('daily_completions', {
@@ -91,7 +92,8 @@ CREATE TABLE IF NOT EXISTS daily_tasks (
   archived INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
   updated_at INTEGER NOT NULL,
-  deleted INTEGER NOT NULL DEFAULT 0
+  deleted INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS daily_completions (
   id TEXT PRIMARY KEY,
@@ -128,4 +130,5 @@ export async function initDb(): Promise<void> {
   // migrations for databases created before these columns existed
   await addColumnIfMissing('tasks', "subtasks TEXT NOT NULL DEFAULT '[]'")
   await addColumnIfMissing('tasks', 'sort_order INTEGER NOT NULL DEFAULT 0')
+  await addColumnIfMissing('daily_tasks', 'sort_order INTEGER NOT NULL DEFAULT 0')
 }
