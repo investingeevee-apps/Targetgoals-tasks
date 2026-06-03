@@ -9,6 +9,7 @@ import { HelpScreen } from './components/HelpScreen'
 import { TaskDetail } from './components/TaskDetail'
 import { Celebration } from './components/Celebration'
 import { SyncSettingsModal } from './components/SyncSettings'
+import { UpdatePrompt } from './components/UpdatePrompt'
 
 export default function App() {
   const screen = useStore((s) => s.screen)
@@ -40,6 +41,7 @@ export default function App() {
 
       <Celebration />
       <SyncSettingsModal />
+      <UpdatePrompt />
     </div>
   )
 }
