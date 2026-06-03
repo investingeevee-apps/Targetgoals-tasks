@@ -252,10 +252,9 @@ function TaskRow({
               </Text>
             ) : null}
             {hasSubs ? (
-              <Pressable onPress={() => setExpanded((e) => !e)} hitSlop={6}>
-                <Text style={styles.metaSub}>
-                  {expanded ? '▾' : '▸'} ☑ {subDone}/{task.subtasks.length}
-                </Text>
+              <Pressable onPress={() => setExpanded((e) => !e)} hitSlop={8} style={styles.subChip}>
+                <Text style={styles.subChevron}>{expanded ? '▾' : '▸'}</Text>
+                <Text style={styles.metaSub}> ☑ {subDone}/{task.subtasks.length}</Text>
               </Pressable>
             ) : null}
             {task.due ? (
@@ -349,6 +348,11 @@ const styles = StyleSheet.create({
   meta: { color: colors.textFaint, fontSize: 12 },
   metaOverdue: { color: colors.rose },
   metaSub: { color: colors.textDim, fontSize: 12 },
+  subChip: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.surfaceAlt, borderRadius: 6, paddingLeft: 5, paddingRight: 7, paddingVertical: 2,
+  },
+  subChevron: { color: colors.accent, fontSize: 15, fontWeight: '800', lineHeight: 16 },
   subPanel: { marginLeft: 32, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.border, marginBottom: 6 },
   subItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
   subCheck: {

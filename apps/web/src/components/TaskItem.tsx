@@ -61,11 +61,13 @@ export function TaskItem({
             )}
             {hasSubs && (
               <button
-                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-300"
+                className="inline-flex items-center gap-1 rounded bg-slate-800/70 py-0.5 pl-1 pr-1.5 text-slate-300 transition-colors hover:bg-slate-700"
                 onClick={() => setExpanded((e) => !e)}
                 title={expanded ? 'Hide subtasks' : 'Show subtasks'}
               >
-                <span className="inline-block w-2 text-[9px]">{expanded ? '▾' : '▸'}</span>
+                <span className="text-base font-bold leading-none text-accent">
+                  {expanded ? '▾' : '▸'}
+                </span>
                 ☑ {subDone}/{task.subtasks.length}
               </button>
             )}
