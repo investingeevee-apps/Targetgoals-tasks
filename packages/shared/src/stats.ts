@@ -1,6 +1,6 @@
 import type { DailyLog } from './types'
 import type { DailyCompletionDTO, DailyTaskDTO } from './sync'
-import { addDays, dayDiff, toKey, todayKey } from './dates'
+import { addDays, dayDiff, todayKey } from './dates'
 
 export interface Stats {
   totalCompletions: number
@@ -66,64 +66,45 @@ export interface Streaks {
   longestStreak: number
 }
 
-/** Local 'YYYY-MM-DD' for an ISO timestamp. */
-function isoDay(iso: string): string {
-  return toKey(new Date(iso))
-}
-
 /**
- * Perfect-day streaks: a day counts only when EVERY habit that existed that day
- * (created on/before it, currently active) was completed. So unchecking any habit
- * — e.g. undoing a misclick — drops today from the streak. Today gets a grace
- * period: an incomplete today doesn't break a streak earned through yesterday.
+ * Daily streaks: a day counts toward the streak when you complete AT LEAST ONE
+ * habit that day. This is robust across the daily reset and adding/removing
+ * habits, and it preserves history-based streaks. Today gets a grace period, so
+ * an unfinished today doesn't break a streak earned through yesterday.
+ *
+ * (`_dailyTasks` is accepted for call-site compatibility but not needed.)
  */
 export function computeStreaks(
-  dailyTasks: DailyTaskDTO[],
+  _dailyTasks: DailyTaskDTO[],
   completions: DailyCompletionDTO[],
 ): Streaks {
-  const active = dailyTasks
-    .filter((d) => !d.deleted && !d.archived)
-    .map((d) => ({ id: d.id, since: isoDay(d.createdAt) }))
-  if (active.length === 0) return { currentStreak: 0, longestStreak: 0 }
+  const activeDays = new Set<string>()
+  for (const c of completions) {
+    if (!c.deleted) activeDays.add(c.dateKey)
+  }
+  if (activeDays.size === 0) return { currentStreak: 0, longestStreak: 0 }
 
   const today = todayKey()
-  const byDay = new Map<string, Set<string>>()
-  let firstDay = today
-  for (const c of completions) {
-    if (c.deleted) continue
-    let set = byDay.get(c.dateKey)
-    if (!set) byDay.set(c.dateKey, (set = new Set()))
-    set.add(c.dailyTaskId)
-    if (c.dateKey < firstDay) firstDay = c.dateKey
-  }
 
-  const isPerfect = (day: string): boolean => {
-    const required = active.filter((h) => h.since <= day)
-    if (required.length === 0) return false
-    const done = byDay.get(day)
-    if (!done) return false
-    return required.every((h) => done.has(h.id))
-  }
-
-  // current streak — grace for today
+  // current streak — grace for today (count back from today, or yesterday if
+  // today isn't logged yet)
   let currentStreak = 0
   let cursor = today
-  if (!isPerfect(cursor)) cursor = addDays(cursor, -1)
-  while (isPerfect(cursor)) {
+  if (!activeDays.has(cursor)) cursor = addDays(cursor, -1)
+  while (activeDays.has(cursor)) {
     currentStreak++
     cursor = addDays(cursor, -1)
   }
 
-  // longest streak across history
+  // longest streak across all history
+  const days = Array.from(activeDays).sort()
   let longestStreak = 0
   let run = 0
-  for (let d = firstDay; d <= today; d = addDays(d, 1)) {
-    if (isPerfect(d)) {
-      run++
-      if (run > longestStreak) longestStreak = run
-    } else {
-      run = 0
-    }
+  let prev: string | null = null
+  for (const d of days) {
+    run = prev && dayDiff(d, prev) === 1 ? run + 1 : 1
+    if (run > longestStreak) longestStreak = run
+    prev = d
   }
 
   return { currentStreak, longestStreak }

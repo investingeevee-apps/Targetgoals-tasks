@@ -189,14 +189,22 @@ export const useStore = create<State>()(
         dropUnsyncedSeeds: () =>
           set((s) => {
             const has = (kind: string, id: string) => Boolean(s.dirty[`${kind}:${id}`])
+            // Habits the user has actually completed = real activity, never drop them.
+            const usedHabits = new Set(
+              s.dailyCompletions.filter((c) => !c.deleted).map((c) => c.dailyTaskId),
+            )
             const lists = s.lists.filter((r) => has('list', r.id))
             const tasks = s.tasks.filter((r) => has('task', r.id))
-            const dailyTasks = s.dailyTasks.filter((r) => has('dailyTask', r.id))
-            const keptDaily = new Set(dailyTasks.map((d) => d.id))
-            const dailyCompletions = s.dailyCompletions.filter(
-              (c) => has('completion', c.id) && keptDaily.has(c.dailyTaskId),
+            const dailyTasks = s.dailyTasks.filter(
+              (d) => has('dailyTask', d.id) || usedHabits.has(d.id),
             )
-            return { lists, tasks, dailyTasks, dailyCompletions }
+            const keptDaily = new Set(dailyTasks.map((d) => d.id))
+            const dailyCompletions = s.dailyCompletions.filter((c) => keptDaily.has(c.dailyTaskId))
+            // Mark kept rows dirty so any local-only history uploads to the server.
+            const dirty = { ...s.dirty }
+            for (const d of dailyTasks) dirty[`dailyTask:${d.id}`] = true
+            for (const c of dailyCompletions) dirty[`completion:${c.id}`] = true
+            return { lists, tasks, dailyTasks, dailyCompletions, dirty }
           }),
       }
     },
