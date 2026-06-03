@@ -1,11 +1,36 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const APP_VERSION: string = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf-8'),
+).version
+
+/** Emits a tiny dist/version.json (not precached) so a client can learn the
+ * version it's about to update TO when the service worker reports a new build. */
+function emitVersionJson() {
+  return {
+    name: 'emit-version-json',
+    generateBundle() {
+      // @ts-expect-error rollup emitFile is available on the plugin context
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: JSON.stringify({ version: APP_VERSION }),
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   plugins: [
     react(),
+    emitVersionJson(),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icon-maskable.svg'],

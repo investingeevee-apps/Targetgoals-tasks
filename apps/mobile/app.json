@@ -58,7 +58,8 @@
     "extra": {
       "eas": {
         "projectId": "6f90eccc-4125-4230-b256-9efe5cdab72f"
-      }
+      },
+      "appVersion": "0.1.1"
     },
     "owner": "deveevee"
   }
