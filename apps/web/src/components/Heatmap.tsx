@@ -47,7 +47,7 @@ export function Heatmap({ log, weeks = 18 }: { log: DailyLog; weeks?: number }) 
                     title={
                       future
                         ? ''
-                        : `${day.count} completed Â· ${formatLongDate(day.key)}`
+                        : `${day.count} completed · ${formatLongDate(day.key)}`
                     }
                     className={`h-3.5 w-3.5 rounded-sm ${
                       future ? 'bg-transparent' : LEVELS[lvl]

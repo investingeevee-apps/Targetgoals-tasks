@@ -37,6 +37,16 @@ export default defineConfig({
         // app is served by the server.
         navigateFallbackDenylist: [/^\/api/, /^\/pair/],
         cleanupOutdatedCaches: true,
+        // Never cache the sync API or pairing page — always hit the network so a
+        // stale 401/500 can't be served from cache (the web app and API share an
+        // origin in production).
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/api') || url.pathname.startsWith('/pair'),
+            handler: 'NetworkOnly',
+          },
+        ],
       },
       devOptions: {
         enabled: false,

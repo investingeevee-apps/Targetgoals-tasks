@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import type { TaskDTO } from '@targetgoals/shared'
 import { CheckCircle, Circle, Close, Plus, Star, Trash } from './Icons'
@@ -16,6 +16,15 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
   const reorderSubtasks = useStore((s) => s.reorderSubtasks)
 
   const [subDraft, setSubDraft] = useState('')
+  // Edit title/notes in local state and commit on blur, so we don't rewrite the
+  // whole store (and persist to localStorage) on every keystroke.
+  const [titleDraft, setTitleDraft] = useState(task.title)
+  const [notesDraft, setNotesDraft] = useState(task.notes)
+  useEffect(() => {
+    setTitleDraft(task.title)
+    setNotesDraft(task.notes)
+  }, [task.id])
+
   const subDone = task.subtasks.filter((st) => st.completed).length
 
   return (
@@ -37,8 +46,15 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
             Title
           </label>
           <textarea
-            value={task.title}
-            onChange={(e) => updateTask(task.id, { title: e.target.value })}
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onBlur={() => {
+              if (titleDraft.trim() && titleDraft !== task.title) {
+                updateTask(task.id, { title: titleDraft })
+              } else if (!titleDraft.trim()) {
+                setTitleDraft(task.title) // restore — a task can't be blank
+              }
+            }}
             rows={2}
             className="w-full resize-none rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-accent"
           />
@@ -49,8 +65,11 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
             Notes
           </label>
           <textarea
-            value={task.notes}
-            onChange={(e) => updateTask(task.id, { notes: e.target.value })}
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            onBlur={() => {
+              if (notesDraft !== task.notes) updateTask(task.id, { notes: notesDraft })
+            }}
             rows={5}
             placeholder="Add details…"
             className="w-full resize-none rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-accent"
@@ -78,8 +97,15 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
                         {st.completed ? <CheckCircle width={16} height={16} /> : <Circle width={16} height={16} />}
                       </button>
                       <input
-                        value={st.title}
-                        onChange={(e) => renameSubtask(task.id, st.id, e.target.value)}
+                        key={`${st.id}:${st.title}`}
+                        defaultValue={st.title}
+                        onBlur={(e) => {
+                          const v = e.target.value
+                          if (v.trim() && v !== st.title) renameSubtask(task.id, st.id, v)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') e.currentTarget.blur()
+                        }}
                         className={`flex-1 bg-transparent text-sm outline-none ${
                           st.completed ? 'text-slate-500 line-through' : 'text-slate-200'
                         }`}
@@ -103,7 +129,7 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
               value={subDraft}
               onChange={(e) => setSubDraft(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && subDraft.trim()) {
                   addSubtask(task.id, subDraft)
                   setSubDraft('')
                 }

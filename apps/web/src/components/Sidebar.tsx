@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { Chart, Help, ListIcon, Plus, Repeat } from './Icons'
 import { SyncStatusButton } from './SyncSettings'
@@ -14,9 +14,21 @@ export function Sidebar() {
 
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
+  // Set when the user cancels (Escape) so the resulting blur doesn't create a list.
+  const cancelling = useRef(false)
 
   function submit() {
+    if (cancelling.current) {
+      cancelling.current = false
+      return
+    }
     addList(name)
+    setName('')
+    setAdding(false)
+  }
+
+  function cancel() {
+    cancelling.current = true
     setName('')
     setAdding(false)
   }
@@ -107,10 +119,7 @@ export function Sidebar() {
               onBlur={submit}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') submit()
-                if (e.key === 'Escape') {
-                  setName('')
-                  setAdding(false)
-                }
+                if (e.key === 'Escape') cancel()
               }}
               placeholder="List name"
               className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-accent"

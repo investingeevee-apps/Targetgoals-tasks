@@ -22,7 +22,13 @@ import {
 const nowIso = () => new Date().toISOString()
 const nowMs = () => Date.now()
 
-/** Generic last-write-wins merge of incoming rows into a local array (by id). */
+/** A dirty key plus the row's updatedAt when it was collected for a push, so we
+ * only clear it after sync if the row hasn't been edited again in the meantime. */
+type DirtySnapshot = { key: string; updatedAt: number }[]
+
+/** Generic last-write-wins merge of incoming rows into a local array (by id).
+ * Tie-break favors the LOCAL row (strict `>`): on an equal-timestamp collision a
+ * server pull must not clobber an edit we already hold. */
 function mergeById<T extends { id: string; updatedAt: number }>(
   local: T[],
   incoming: T[],
@@ -31,7 +37,7 @@ function mergeById<T extends { id: string; updatedAt: number }>(
   const map = new Map(local.map((r) => [r.id, r]))
   for (const row of incoming) {
     const cur = map.get(row.id)
-    if (!cur || row.updatedAt >= cur.updatedAt) map.set(row.id, row)
+    if (!cur || row.updatedAt > cur.updatedAt) map.set(row.id, row)
   }
   return Array.from(map.values())
 }
@@ -91,9 +97,9 @@ interface State {
   reorderDailyTasks: (orderedIds: ID[]) => void
 
   // ---- sync integration (called by the sync engine) ----
-  collectDirty: () => { changes: Partial<SyncChanges>; keys: string[] }
+  collectDirty: () => { changes: Partial<SyncChanges>; synced: DirtySnapshot }
   applyServerChanges: (changes: Partial<SyncChanges>) => void
-  markSynced: (serverNow: number, keys: string[]) => void
+  markSynced: (serverNow: number, synced: DirtySnapshot) => void
   dropUnsyncedSeeds: () => void
   importLegacy: () => number
 }
@@ -207,12 +213,18 @@ export const useStore = create<State>()(
           }))
         },
         updateTask: (id, patch) =>
-          set((s) => ({
-            tasks: s.tasks.map((t) =>
-              t.id === id ? { ...t, ...patch, updatedAt: nowMs() } : t,
-            ),
-            dirty: dirtyWith(s, 'task', id),
-          })),
+          set((s) => {
+            // Ignore a blank/whitespace-only title so a task can't become an
+            // invisible empty row (other fields in the patch still apply).
+            const clean = { ...patch }
+            if ('title' in clean && !clean.title?.trim()) delete clean.title
+            return {
+              tasks: s.tasks.map((t) =>
+                t.id === id ? { ...t, ...clean, updatedAt: nowMs() } : t,
+              ),
+              dirty: dirtyWith(s, 'task', id),
+            }
+          }),
         toggleTask: (id) =>
           set((s) => ({
             tasks: s.tasks.map((t) =>
@@ -484,38 +496,72 @@ export const useStore = create<State>()(
             dailyTasks: [],
             dailyCompletions: [],
           }
-          const keys = Object.keys(s.dirty)
-          for (const key of keys) {
+          const synced: DirtySnapshot = []
+          for (const key of Object.keys(s.dirty)) {
             const sep = key.indexOf(':')
             const kind = key.slice(0, sep)
             const id = key.slice(sep + 1)
+            let row: { updatedAt: number } | undefined
             if (kind === 'list') {
               const r = s.lists.find((x) => x.id === id)
               if (r) changes.lists!.push(r)
+              row = r
             } else if (kind === 'task') {
               const r = s.tasks.find((x) => x.id === id)
               if (r) changes.tasks!.push(r)
+              row = r
             } else if (kind === 'dailyTask') {
               const r = s.dailyTasks.find((x) => x.id === id)
               if (r) changes.dailyTasks!.push(r)
+              row = r
             } else if (kind === 'completion') {
               const r = s.dailyCompletions.find((x) => x.id === id)
               if (r) changes.dailyCompletions!.push(r)
+              row = r
             }
+            // -1 sentinel = no row found; markSynced will clear it (nothing to keep).
+            synced.push({ key, updatedAt: row?.updatedAt ?? -1 })
           }
-          return { changes, keys }
+          return { changes, synced }
         },
         applyServerChanges: (changes) =>
-          set((s) => ({
-            lists: mergeById(s.lists, changes.lists ?? []),
-            tasks: mergeById(s.tasks, changes.tasks ?? []),
-            dailyTasks: mergeById(s.dailyTasks, changes.dailyTasks ?? []),
-            dailyCompletions: mergeById(s.dailyCompletions, changes.dailyCompletions ?? []),
-          })),
-        markSynced: (serverNow, keys) =>
+          set((s) => {
+            // Never let a server pull overwrite a row we've edited but not yet
+            // pushed — the local dirty version is the authoritative latest edit.
+            const fresh = <T extends { id: string }>(kind: string, rows: T[] | undefined) =>
+              (rows ?? []).filter((r) => !s.dirty[`${kind}:${r.id}`])
+            return {
+              lists: mergeById(s.lists, fresh('list', changes.lists)),
+              tasks: mergeById(s.tasks, fresh('task', changes.tasks)),
+              dailyTasks: mergeById(s.dailyTasks, fresh('dailyTask', changes.dailyTasks)),
+              dailyCompletions: mergeById(
+                s.dailyCompletions,
+                fresh('completion', changes.dailyCompletions),
+              ),
+            }
+          }),
+        markSynced: (serverNow, synced) =>
           set((s) => {
             const dirty = { ...s.dirty }
-            for (const k of keys) delete dirty[k]
+            for (const { key, updatedAt } of synced) {
+              const sep = key.indexOf(':')
+              const kind = key.slice(0, sep)
+              const id = key.slice(sep + 1)
+              const arr =
+                kind === 'list'
+                  ? s.lists
+                  : kind === 'task'
+                    ? s.tasks
+                    : kind === 'dailyTask'
+                      ? s.dailyTasks
+                      : kind === 'completion'
+                        ? s.dailyCompletions
+                        : undefined
+              const row = arr?.find((r) => r.id === id)
+              // Clear only if the row is gone or hasn't been re-edited since we
+              // collected it. A row edited mid-flight stays dirty for next sync.
+              if (!row || row.updatedAt === updatedAt) delete dirty[key]
+            }
             return { dirty, lastSyncedAt: serverNow }
           }),
         // Drop local example/seed rows (anything never edited, i.e. not dirty) when
@@ -566,14 +612,17 @@ export const useStore = create<State>()(
       version: 3,
       // Backfill fields added after a user's data was first saved (subtasks/order).
       migrate: (state: unknown) => {
+        // Guard a nullish/corrupt persisted value so we fall back cleanly instead
+        // of crashing rehydration.
+        if (!state || typeof state !== 'object') return state as never
         const s = state as { tasks?: TaskDTO[]; dailyTasks?: DailyTaskDTO[] }
-        if (s?.tasks) {
-          s.tasks = s.tasks.map((t, i) => ({ ...t, subtasks: t.subtasks ?? [], order: t.order ?? i }))
-        }
-        if (s?.dailyTasks) {
-          s.dailyTasks = s.dailyTasks.map((d, i) => ({ ...d, order: d.order ?? i }))
-        }
-        return s as never
+        const tasks = Array.isArray(s.tasks)
+          ? s.tasks.map((t, i) => ({ ...t, subtasks: t.subtasks ?? [], order: t.order ?? i }))
+          : s.tasks
+        const dailyTasks = Array.isArray(s.dailyTasks)
+          ? s.dailyTasks.map((d, i) => ({ ...d, order: d.order ?? i }))
+          : s.dailyTasks
+        return { ...s, tasks, dailyTasks } as never
       },
       partialize: (s) => ({
         lists: s.lists,

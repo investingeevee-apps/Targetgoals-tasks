@@ -129,7 +129,7 @@ export function TaskItem({
               value={subDraft}
               onChange={(e) => setSubDraft(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && subDraft.trim()) {
                   addSubtask(task.id, subDraft)
                   setSubDraft('')
                 }

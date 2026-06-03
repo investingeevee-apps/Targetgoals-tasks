@@ -1,8 +1,9 @@
 ﻿import { useMemo, useState } from 'react'
 import { useStore } from '../store'
-import { todayKey, formatLongDate } from '@targetgoals/shared'
+import { formatLongDate } from '@targetgoals/shared'
 import { computeStreaks } from '@targetgoals/shared'
 import { buildDailyLog } from '../lib/transform'
+import { useTodayKey } from '../lib/useTodayKey'
 import { CheckCircle, Circle, Flame, Pencil, Plus, Trash } from './Icons'
 import { GripHandle, SortableList, SortableRow } from './Sortable'
 
@@ -19,7 +20,7 @@ export function DailyScreen() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
 
-  const key = todayKey()
+  const key = useTodayKey()
   const dailyLog = useMemo(() => buildDailyLog(completions), [completions])
   const doneToday = useMemo(() => new Set(dailyLog[key] ?? []), [dailyLog, key])
   const active = useMemo(
@@ -179,7 +180,7 @@ export function DailyScreen() {
       </div>
 
       <p className="mt-4 border-t border-slate-800 pt-3 text-center text-xs text-slate-500">
-        Resets every day at midnight Â· completions are tracked in the Overview
+        Resets every day at midnight · completions are tracked in the Overview
       </p>
     </div>
   )
