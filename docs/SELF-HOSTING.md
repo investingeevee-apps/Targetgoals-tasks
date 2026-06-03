@@ -175,3 +175,24 @@ Both clients are **offline-first**: they keep working with no connection and syn
   (`Stop-ScheduledTask` / `Start-ScheduledTask`, or restart the systemd service).
 - **Change the port/URL?** Re-pair afterwards — the QR encodes the URL, so clients
   need the new value.
+
+## 8. How sync resolves conflicts (and one limitation)
+
+Sync is **offline-first** with **last-write-wins (LWW)** per row, compared by a
+millisecond `updatedAt` timestamp. Each device edits locally and pushes/pulls when
+online; the newer edit to a given row wins, and deletes are tombstones (so a delete
+on one device propagates to the others).
+
+This is robust for normal single-user, multi-device use. One thing to know:
+
+- **Subtasks are stored inside their parent task** (not as independent rows). So if
+  **two devices are both offline** and each edits *different subtasks of the same
+  task*, then sync, LWW keeps the whole subtask list from whichever device wrote
+  last — the other device's subtask change to that same task is overwritten. Editing
+  different *tasks* (or the same subtask) is unaffected. In practice this only bites
+  if you routinely edit the same task's subtasks on two devices while both are
+  offline; once either device syncs, the window closes. The same LWW caveat applies
+  to reordering a list on two offline devices at once (the later sync wins the order).
+
+If you need true per-subtask merging later, the fix is to promote subtasks to their
+own sync rows; it isn't needed for typical use.

@@ -52,7 +52,8 @@ Profiles are in [`apps/mobile/eas.json`](../apps/mobile/eas.json):
 EAS manages the signing keystore by default (or supply your own).
 
 > **Publishing for others (optional):** attach the built APK to a GitHub Release so
-> people can download-and-install without building. CI to automate this is Phase H.
+> people can download-and-install without building. This is automated by the
+> `release-android.yml` GitHub Actions workflow (tag a `v*` release).
 
 ---
 
