@@ -215,49 +215,93 @@ function TaskRow({
   onOpen: (id: string) => void
   onMove: (id: string, dir: 'up' | 'down') => void
 }) {
+  const addSubtask = useStore((s) => s.addSubtask)
+  const toggleSubtask = useStore((s) => s.toggleSubtask)
+  const deleteSubtask = useStore((s) => s.deleteSubtask)
+  const [expanded, setExpanded] = useState(false)
+  const [subDraft, setSubDraft] = useState('')
   const subDone = task.subtasks.filter((st) => st.completed).length
+  const hasSubs = task.subtasks.length > 0
+
   return (
-    <View style={styles.taskRow}>
-      {!task.completed && (
-        <View style={styles.moveCol}>
-          <Pressable onPress={() => onMove(task.id, 'up')} hitSlop={6}>
-            <Text style={styles.moveBtn}>▲</Text>
-          </Pressable>
-          <Pressable onPress={() => onMove(task.id, 'down')} hitSlop={6}>
-            <Text style={styles.moveBtn}>▼</Text>
-          </Pressable>
+    <View>
+      <View style={styles.taskRow}>
+        {!task.completed && (
+          <View style={styles.moveCol}>
+            <Pressable onPress={() => onMove(task.id, 'up')} hitSlop={6}>
+              <Text style={styles.moveBtn}>▲</Text>
+            </Pressable>
+            <Pressable onPress={() => onMove(task.id, 'down')} hitSlop={6}>
+              <Text style={styles.moveBtn}>▼</Text>
+            </Pressable>
+          </View>
+        )}
+        <Pressable onPress={() => onToggle(task.id)} hitSlop={8}>
+          <View style={[styles.check, task.completed && styles.checkDone]}>
+            {task.completed && <Text style={styles.checkMark}>✓</Text>}
+          </View>
+        </Pressable>
+        <Pressable style={{ flex: 1 }} onPress={() => onOpen(task.id)}>
+          <Text style={[styles.taskTitle, task.completed && styles.taskTitleDone]} numberOfLines={2}>
+            {task.title}
+          </Text>
+          <View style={styles.metaRow}>
+            {task.notes && !task.completed ? (
+              <Text style={styles.meta} numberOfLines={1}>
+                {task.notes}
+              </Text>
+            ) : null}
+            {hasSubs ? (
+              <Pressable onPress={() => setExpanded((e) => !e)} hitSlop={6}>
+                <Text style={styles.metaSub}>
+                  {expanded ? '▾' : '▸'} ☑ {subDone}/{task.subtasks.length}
+                </Text>
+              </Pressable>
+            ) : null}
+            {task.due ? (
+              <Text style={[styles.meta, !task.completed && isOverdue(task.due) && styles.metaOverdue]}>
+                📅 {formatDue(task.due)}
+              </Text>
+            ) : null}
+          </View>
+        </Pressable>
+        <Pressable onPress={() => onStar(task.id)} hitSlop={8}>
+          <Text style={[styles.star, task.starred && styles.starActive]}>{task.starred ? '★' : '☆'}</Text>
+        </Pressable>
+      </View>
+
+      {hasSubs && expanded && (
+        <View style={styles.subPanel}>
+          {task.subtasks.map((st) => (
+            <View key={st.id} style={styles.subItem}>
+              <Pressable onPress={() => toggleSubtask(task.id, st.id)} hitSlop={8}>
+                <View style={[styles.subCheck, st.completed && styles.checkDone]}>
+                  {st.completed && <Text style={styles.subMark}>✓</Text>}
+                </View>
+              </Pressable>
+              <Text style={[styles.subText, st.completed && styles.taskTitleDone]}>{st.title}</Text>
+              <Pressable onPress={() => deleteSubtask(task.id, st.id)} hitSlop={8}>
+                <Text style={styles.subDelete}>🗑</Text>
+              </Pressable>
+            </View>
+          ))}
+          <View style={styles.subItem}>
+            <Text style={styles.subPlus}>＋</Text>
+            <TextInput
+              style={styles.subAddInput}
+              value={subDraft}
+              onChangeText={setSubDraft}
+              placeholder="Add a subtask"
+              placeholderTextColor={colors.textFaint}
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                addSubtask(task.id, subDraft)
+                setSubDraft('')
+              }}
+            />
+          </View>
         </View>
       )}
-      <Pressable onPress={() => onToggle(task.id)} hitSlop={8}>
-        <View style={[styles.check, task.completed && styles.checkDone]}>
-          {task.completed && <Text style={styles.checkMark}>✓</Text>}
-        </View>
-      </Pressable>
-      <Pressable style={{ flex: 1 }} onPress={() => onOpen(task.id)}>
-        <Text style={[styles.taskTitle, task.completed && styles.taskTitleDone]} numberOfLines={2}>
-          {task.title}
-        </Text>
-        <View style={styles.metaRow}>
-          {task.notes && !task.completed ? (
-            <Text style={styles.meta} numberOfLines={1}>
-              {task.notes}
-            </Text>
-          ) : null}
-          {task.subtasks.length > 0 ? (
-            <Text style={styles.meta}>
-              ☑ {subDone}/{task.subtasks.length}
-            </Text>
-          ) : null}
-          {task.due ? (
-            <Text style={[styles.meta, !task.completed && isOverdue(task.due) && styles.metaOverdue]}>
-              📅 {formatDue(task.due)}
-            </Text>
-          ) : null}
-        </View>
-      </Pressable>
-      <Pressable onPress={() => onStar(task.id)} hitSlop={8}>
-        <Text style={[styles.star, task.starred && styles.starActive]}>{task.starred ? '★' : '☆'}</Text>
-      </Pressable>
     </View>
   )
 }
@@ -304,6 +348,18 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', gap: 12, marginTop: 2 },
   meta: { color: colors.textFaint, fontSize: 12 },
   metaOverdue: { color: colors.rose },
+  metaSub: { color: colors.textDim, fontSize: 12 },
+  subPanel: { marginLeft: 32, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.border, marginBottom: 6 },
+  subItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
+  subCheck: {
+    width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: colors.textFaint,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  subMark: { color: '#fff', fontSize: 11, fontWeight: '900', lineHeight: 13 },
+  subText: { flex: 1, color: colors.textDim, fontSize: 14 },
+  subDelete: { fontSize: 13, opacity: 0.7 },
+  subPlus: { color: colors.accent, fontSize: 15, fontWeight: '700', width: 18, textAlign: 'center' },
+  subAddInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 2 },
   star: { fontSize: 18, color: colors.textFaint, marginTop: 1 },
   starActive: { color: colors.amber },
   completedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
