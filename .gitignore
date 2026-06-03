@@ -31,6 +31,11 @@ web-build/
 *.keystore
 *.jks
 
+# TLS certs / private keys (e.g. from `tailscale cert`)
+*.crt
+*.key
+*.pem
+
 # logs
 npm-debug.log*
 yarn-debug.log*
