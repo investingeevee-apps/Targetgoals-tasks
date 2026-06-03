@@ -21,7 +21,10 @@ async function readWidgetData(): Promise<WidgetData> {
       dailyCompletions?: DailyCompletionDTO[]
     }
     const completions = state.dailyCompletions ?? []
-    const dailyTasks = (state.dailyTasks ?? []).filter((d) => !d.deleted && !d.archived)
+    const dailyTasks = (state.dailyTasks ?? [])
+      .filter((d) => !d.deleted && !d.archived)
+      // Match the app's Daily screen order so the widget reflects reordering.
+      .sort((a, b) => a.order - b.order || a.createdAt.localeCompare(b.createdAt))
     const log = buildDailyLog(completions)
     const doneToday = new Set(log[todayKey()] ?? [])
     return {
