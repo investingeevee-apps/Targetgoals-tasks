@@ -60,30 +60,38 @@ npm run start:server     # http://localhost:4000
 Open <http://localhost:4000/pair> — you'll see a QR code plus the **server URL** and
 **token**. Open <http://localhost:4000> for the web app itself.
 
-### Keep it running (Windows — recommended)
+### Keep it running (Windows — recommended, no admin)
 
-Register an auto-start background task (no extra dependencies):
-
-```bash
-npm run service:install -w @targetgoals/server
-```
-
-This creates a hidden, self-restarting **Scheduled Task** that launches the server at
-logon and starts it immediately. Remove it any time with:
+Drop a hidden auto-start launcher into your **Startup folder** — no administrator
+rights needed. It starts the server (hidden, no console window) at every login, and
+right now:
 
 ```bash
-npm run service:uninstall -w @targetgoals/server
+npm run startup:install -w @targetgoals/server
 ```
 
-Manage manually in PowerShell:
+Disable it any time with:
+
+```bash
+npm run startup:uninstall -w @targetgoals/server
+```
+
+### Keep it running (Windows — Scheduled Task, needs admin)
+
+Alternatively, register a self-restarting **Scheduled Task** (run from an
+**elevated / "Run as administrator" PowerShell** — registering a task requires admin):
+
+```bash
+npm run service:install -w @targetgoals/server     # then: service:uninstall to remove
+```
 
 ```powershell
 Start-ScheduledTask -TaskName TargetGoalsTasksServer
 Stop-ScheduledTask  -TaskName TargetGoalsTasksServer
 ```
 
-> The Scheduled Task runs when you're **logged in**. If you want the server up even
-> at the Windows lock/login screen, use a true Windows Service via
+> Both options run when you're **logged in**. For the server to be up even at the
+> Windows lock/login screen, use a true Windows Service via
 > [`node-windows`](https://github.com/coreybutler/node-windows) or
 > [NSSM](https://nssm.cc/) pointing at `npm run start:server`.
 

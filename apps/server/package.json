@@ -11,6 +11,8 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "startup:install": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts/install-startup.ps1",
+    "startup:uninstall": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts/uninstall-startup.ps1",
     "service:install": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts/install-service.ps1",
     "service:uninstall": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts/uninstall-service.ps1"
   },
