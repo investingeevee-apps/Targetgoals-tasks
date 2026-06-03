@@ -1,13 +1,20 @@
+import type { HTMLAttributes } from 'react'
 import { useStore } from '../store'
 import type { TaskDTO } from '@targetgoals/shared'
 import { formatDue, isOverdue } from '@targetgoals/shared'
 import { Calendar, CheckCircle, Circle, Star } from './Icons'
+import { GripHandle } from './Sortable'
 
-export function TaskItem({ task }: { task: TaskDTO }) {
+export function TaskItem({
+  task,
+  dragHandle,
+}: {
+  task: TaskDTO
+  dragHandle?: HTMLAttributes<HTMLElement>
+}) {
   const toggleTask = useStore((s) => s.toggleTask)
   const toggleStar = useStore((s) => s.toggleStar)
   const selectTask = useStore((s) => s.selectTask)
-  const moveTask = useStore((s) => s.moveTask)
   const selectedTaskId = useStore((s) => s.selectedTaskId)
 
   const selected = selectedTaskId === task.id
@@ -15,29 +22,11 @@ export function TaskItem({ task }: { task: TaskDTO }) {
 
   return (
     <div
-      className={`group flex items-start gap-2 rounded-lg px-3 py-2.5 transition-colors ${
+      className={`group flex items-start gap-2 rounded-lg px-2 py-2.5 transition-colors ${
         selected ? 'bg-slate-800/80' : 'hover:bg-slate-800/50'
       }`}
     >
-      {/* reorder (active tasks only) */}
-      {!task.completed && (
-        <div className="flex flex-col opacity-0 transition group-hover:opacity-100">
-          <button
-            className="leading-none text-slate-500 hover:text-slate-200"
-            onClick={() => moveTask(task.id, 'up')}
-            title="Move up"
-          >
-            ▲
-          </button>
-          <button
-            className="leading-none text-slate-500 hover:text-slate-200"
-            onClick={() => moveTask(task.id, 'down')}
-            title="Move down"
-          >
-            ▼
-          </button>
-        </div>
-      )}
+      {dragHandle ? <GripHandle handle={dragHandle} /> : <span className="w-4 shrink-0" />}
 
       <button
         className={`mt-0.5 shrink-0 transition-colors ${

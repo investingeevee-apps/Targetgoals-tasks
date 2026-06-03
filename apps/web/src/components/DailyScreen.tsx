@@ -4,6 +4,7 @@ import { todayKey, formatLongDate } from '@targetgoals/shared'
 import { computeStreaks } from '@targetgoals/shared'
 import { buildDailyLog } from '../lib/transform'
 import { CheckCircle, Circle, Flame, Pencil, Plus, Trash } from './Icons'
+import { GripHandle, SortableList, SortableRow } from './Sortable'
 
 export function DailyScreen() {
   const allDailyTasks = useStore((s) => s.dailyTasks)
@@ -12,6 +13,7 @@ export function DailyScreen() {
   const deleteDailyTask = useStore((s) => s.deleteDailyTask)
   const renameDailyTask = useStore((s) => s.renameDailyTask)
   const toggleDailyToday = useStore((s) => s.toggleDailyToday)
+  const reorderDailyTasks = useStore((s) => s.reorderDailyTasks)
 
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -89,13 +91,16 @@ export function DailyScreen() {
           </div>
         )}
 
+        <SortableList ids={active.map((d) => d.id)} onReorder={reorderDailyTasks}>
         {active.map((d) => {
           const done = doneToday.has(d.id)
           return (
+            <SortableRow key={d.id} id={d.id}>
+            {(handle) => (
             <div
-              key={d.id}
-              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-800/50"
+              className="group flex items-center gap-2 rounded-lg px-2 py-2.5 hover:bg-slate-800/50"
             >
+              <GripHandle handle={handle} />
               <button
                 className={`shrink-0 transition-colors ${
                   done ? 'text-accent' : 'text-slate-500 hover:text-slate-300'
@@ -166,8 +171,11 @@ export function DailyScreen() {
                 <Trash width={16} height={16} />
               </button>
             </div>
+            )}
+            </SortableRow>
           )
         })}
+        </SortableList>
       </div>
 
       <p className="mt-4 border-t border-slate-800 pt-3 text-center text-xs text-slate-500">

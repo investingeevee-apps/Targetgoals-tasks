@@ -2,6 +2,7 @@
 import { useStore } from '../store'
 import type { TaskDTO } from '@targetgoals/shared'
 import { CheckCircle, Circle, Close, Plus, Star, Trash } from './Icons'
+import { GripHandle, SortableList, SortableRow } from './Sortable'
 
 export function TaskDetail({ task }: { task: TaskDTO }) {
   const updateTask = useStore((s) => s.updateTask)
@@ -12,6 +13,7 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
   const toggleSubtask = useStore((s) => s.toggleSubtask)
   const renameSubtask = useStore((s) => s.renameSubtask)
   const deleteSubtask = useStore((s) => s.deleteSubtask)
+  const reorderSubtasks = useStore((s) => s.reorderSubtasks)
 
   const [subDraft, setSubDraft] = useState('')
   const subDone = task.subtasks.filter((st) => st.completed).length
@@ -60,30 +62,40 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
             Subtasks {task.subtasks.length > 0 && `(${subDone}/${task.subtasks.length})`}
           </label>
           <div className="space-y-1">
-            {task.subtasks.map((st) => (
-              <div key={st.id} className="group/sub flex items-center gap-2">
-                <button
-                  className={st.completed ? 'text-accent' : 'text-slate-500 hover:text-slate-300'}
-                  onClick={() => toggleSubtask(task.id, st.id)}
-                >
-                  {st.completed ? <CheckCircle width={16} height={16} /> : <Circle width={16} height={16} />}
-                </button>
-                <input
-                  value={st.title}
-                  onChange={(e) => renameSubtask(task.id, st.id, e.target.value)}
-                  className={`flex-1 bg-transparent text-sm outline-none ${
-                    st.completed ? 'text-slate-500 line-through' : 'text-slate-200'
-                  }`}
-                />
-                <button
-                  className="text-slate-600 opacity-0 hover:text-rose-400 group-hover/sub:opacity-100"
-                  onClick={() => deleteSubtask(task.id, st.id)}
-                  title="Delete subtask"
-                >
-                  <Trash width={14} height={14} />
-                </button>
-              </div>
-            ))}
+            <SortableList
+              ids={task.subtasks.map((st) => st.id)}
+              onReorder={(ids) => reorderSubtasks(task.id, ids)}
+            >
+              {task.subtasks.map((st) => (
+                <SortableRow key={st.id} id={st.id}>
+                  {(handle) => (
+                    <div className="group/sub flex items-center gap-2">
+                      <GripHandle handle={handle} />
+                      <button
+                        className={st.completed ? 'text-accent' : 'text-slate-500 hover:text-slate-300'}
+                        onClick={() => toggleSubtask(task.id, st.id)}
+                      >
+                        {st.completed ? <CheckCircle width={16} height={16} /> : <Circle width={16} height={16} />}
+                      </button>
+                      <input
+                        value={st.title}
+                        onChange={(e) => renameSubtask(task.id, st.id, e.target.value)}
+                        className={`flex-1 bg-transparent text-sm outline-none ${
+                          st.completed ? 'text-slate-500 line-through' : 'text-slate-200'
+                        }`}
+                      />
+                      <button
+                        className="text-slate-600 opacity-0 hover:text-rose-400 group-hover/sub:opacity-100"
+                        onClick={() => deleteSubtask(task.id, st.id)}
+                        title="Delete subtask"
+                      >
+                        <Trash width={14} height={14} />
+                      </button>
+                    </div>
+                  )}
+                </SortableRow>
+              ))}
+            </SortableList>
           </div>
           <div className="mt-2 flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 focus-within:border-accent">
             <Plus width={14} height={14} className="text-accent" />

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { Plus } from './Icons'
 import { TaskItem } from './TaskItem'
+import { SortableList, SortableRow } from './Sortable'
 
 export function TasksScreen() {
   const currentListId = useStore((s) => s.currentListId)
@@ -13,6 +14,7 @@ export function TasksScreen() {
   const renameList = useStore((s) => s.renameList)
   const deleteList = useStore((s) => s.deleteList)
   const clearCompleted = useStore((s) => s.clearCompleted)
+  const reorderTasks = useStore((s) => s.reorderTasks)
 
   const [draft, setDraft] = useState('')
   const [editingName, setEditingName] = useState(false)
@@ -110,9 +112,16 @@ export function TasksScreen() {
         )}
 
         <div className="space-y-0.5">
-          {active.map((t) => (
-            <TaskItem key={t.id} task={t} />
-          ))}
+          <SortableList
+            ids={active.map((t) => t.id)}
+            onReorder={(ids) => reorderTasks(currentListId, ids)}
+          >
+            {active.map((t) => (
+              <SortableRow key={t.id} id={t.id}>
+                {(handle) => <TaskItem task={t} dragHandle={handle} />}
+              </SortableRow>
+            ))}
+          </SortableList>
         </div>
 
         {done.length > 0 && (

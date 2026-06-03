@@ -563,7 +563,18 @@ export const useStore = create<State>()(
     },
     {
       name: STORE_KEY,
-      version: 2,
+      version: 3,
+      // Backfill fields added after a user's data was first saved (subtasks/order).
+      migrate: (state: unknown) => {
+        const s = state as { tasks?: TaskDTO[]; dailyTasks?: DailyTaskDTO[] }
+        if (s?.tasks) {
+          s.tasks = s.tasks.map((t, i) => ({ ...t, subtasks: t.subtasks ?? [], order: t.order ?? i }))
+        }
+        if (s?.dailyTasks) {
+          s.dailyTasks = s.dailyTasks.map((d, i) => ({ ...d, order: d.order ?? i }))
+        }
+        return s as never
+      },
       partialize: (s) => ({
         lists: s.lists,
         tasks: s.tasks,
