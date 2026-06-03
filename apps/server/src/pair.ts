@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import type { Request, Response } from 'express'
+import type { NextFunction, Request, Response } from 'express'
 import QRCode from 'qrcode'
 import type { PairingPayload } from '@targetgoals/shared'
 import { PUBLIC_URL, SERVER_NAME, TOKEN } from './config.js'
@@ -7,23 +7,48 @@ import { PUBLIC_URL, SERVER_NAME, TOKEN } from './config.js'
 export const pairRouter = Router()
 
 /**
+ * Tiny in-memory sliding-window rate limiter. The /pair routes serve the plaintext
+ * token, so even though Tailscale is the real boundary, throttle them so a
+ * network-adjacent caller can't just script-scrape the token. No external dep.
+ */
+function rateLimit(max: number, windowMs: number) {
+  const hits = new Map<string, number[]>()
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const ip = req.ip ?? 'unknown'
+    const now = Date.now()
+    const recent = (hits.get(ip) ?? []).filter((t) => now - t < windowMs)
+    recent.push(now)
+    hits.set(ip, recent)
+    if (recent.length > max) {
+      res.status(429).json({ error: 'rate_limited' })
+      return
+    }
+    next()
+  }
+}
+
+const pairLimit = rateLimit(10, 60_000) // 10 requests / minute / IP
+
+/**
  * Pairing page. Shows a QR encoding the server URL + token for the Android app to
  * scan. The token is visible here, so only open this where you trust the network —
  * over Tailscale that means your own devices.
  */
-pairRouter.get('/pair', async (_req: Request, res: Response) => {
-  const payload: PairingPayload = { url: PUBLIC_URL, token: TOKEN, name: SERVER_NAME }
-  const qrSvg = await QRCode.toString(JSON.stringify(payload), {
-    type: 'svg',
-    margin: 1,
-    width: 264,
-    color: { dark: '#0f172a', light: '#ffffff' },
-  })
-  res.type('html').send(renderPage(payload, qrSvg))
+pairRouter.get('/pair', pairLimit, (_req: Request, res: Response, next: NextFunction) => {
+  void (async () => {
+    const payload: PairingPayload = { url: PUBLIC_URL, token: TOKEN, name: SERVER_NAME }
+    const qrSvg = await QRCode.toString(JSON.stringify(payload), {
+      type: 'svg',
+      margin: 1,
+      width: 264,
+      color: { dark: '#0f172a', light: '#ffffff' },
+    })
+    res.type('html').send(renderPage(payload, qrSvg))
+  })().catch(next)
 })
 
 // JSON form, in case a client wants to fetch it programmatically.
-pairRouter.get('/pair.json', (_req: Request, res: Response) => {
+pairRouter.get('/pair.json', pairLimit, (_req: Request, res: Response) => {
   const payload: PairingPayload = { url: PUBLIC_URL, token: TOKEN, name: SERVER_NAME }
   res.json(payload)
 })

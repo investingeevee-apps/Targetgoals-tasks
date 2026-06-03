@@ -115,12 +115,21 @@ CREATE INDEX IF NOT EXISTS idx_daily_completions_updated ON daily_completions(up
 CREATE INDEX IF NOT EXISTS idx_daily_completions_date ON daily_completions(date_key);
 `
 
+// Tables we allow ALTER on — guards the string-interpolated DDL below.
+const MIGRATABLE_TABLES = new Set(['tasks', 'daily_tasks', 'daily_completions', 'lists', 'settings'])
+
 /** Add a column if it doesn't exist yet (idempotent migration). */
 async function addColumnIfMissing(table: string, columnDef: string): Promise<void> {
+  if (!MIGRATABLE_TABLES.has(table)) {
+    throw new Error(`addColumnIfMissing: refusing to ALTER unknown table '${table}'`)
+  }
   try {
     await client.execute(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`)
-  } catch {
-    // column already exists — ignore
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    // Only "column already exists" is expected/ignorable; rethrow anything else
+    // (disk full, corrupt DB, typo) so it isn't silently swallowed.
+    if (!/duplicate column name|already exists/i.test(msg)) throw err
   }
 }
 
