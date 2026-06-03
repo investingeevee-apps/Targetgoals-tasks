@@ -16,6 +16,7 @@
     "start:server": "npm run start -w @targetgoals/server",
     "build": "npm run build -w @targetgoals/web",
     "build:shared": "npm run build -w @targetgoals/shared",
+    "test": "npm run test -w @targetgoals/shared",
     "typecheck:server": "npm run typecheck -w @targetgoals/server",
     "preview": "npm run preview -w @targetgoals/web"
   }

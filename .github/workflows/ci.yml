@@ -20,6 +20,9 @@ jobs:
       # Installs all workspaces; the root postinstall builds @targetgoals/shared.
       - run: npm ci
 
+      - name: Unit tests (shared streak/date logic)
+        run: npm test
+
       - name: Build web (also builds shared)
         run: npm run build
 

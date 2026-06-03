@@ -18,6 +18,10 @@
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b --watch",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "test": "node --import tsx --test src/*.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.4"
   }
 }

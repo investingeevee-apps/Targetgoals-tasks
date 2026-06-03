@@ -1,6 +1,6 @@
 import type { DailyLog } from './types'
 import type { DailyCompletionDTO, DailyTaskDTO } from './sync'
-import { addDays, dayDiff, todayKey } from './dates'
+import { addDays, dayDiff, fromKey, todayKey } from './dates'
 
 export interface Stats {
   totalCompletions: number
@@ -123,7 +123,7 @@ export function buildHeatmap(log: DailyLog, weeks = 18): HeatmapDay[][] {
   const today = todayKey()
   // Find the most recent Saturday (end of the grid's last column) so columns
   // align to weeks. We render Sun..Sat rows.
-  const todayDow = new Date(today + 'T00:00:00').getDay() // 0=Sun..6=Sat
+  const todayDow = fromKey(today).getDay() // 0=Sun..6=Sat (local, consistent with rest of module)
   const lastDayKey = addDays(today, 6 - todayDow) // upcoming Saturday
   const totalDays = weeks * 7
   const startKey = addDays(lastDayKey, -(totalDays - 1))
