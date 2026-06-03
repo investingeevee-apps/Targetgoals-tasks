@@ -6,6 +6,7 @@ import type {
   DailyCompletionDTO,
   ID,
   SyncChanges,
+  TaskDTO,
 } from '@targetgoals/shared'
 import { computeStreaks, todayKey } from '@targetgoals/shared'
 import { seedData, uid } from './lib/transform'
@@ -13,7 +14,7 @@ import { seedData, uid } from './lib/transform'
 const nowIso = () => new Date().toISOString()
 const nowMs = () => Date.now()
 
-export type MobileScreen = 'daily' | 'overview' | 'settings'
+export type MobileScreen = 'tasks' | 'daily' | 'overview' | 'settings'
 
 function mergeById<T extends { id: string; updatedAt: number }>(local: T[], incoming: T[]): T[] {
   if (!incoming.length) return local
@@ -34,10 +35,27 @@ interface State {
   lastSyncedAt: number
 
   screen: MobileScreen
+  currentListId: ID | null
+  selectedTaskId: ID | null
   celebration: Celebration | null
 
   setScreen: (s: MobileScreen) => void
   dismissCelebration: () => void
+
+  // lists
+  selectList: (id: ID) => void
+  addList: (name: string) => void
+  renameList: (id: ID, name: string) => void
+  deleteList: (id: ID) => void
+
+  // tasks
+  selectTask: (id: ID | null) => void
+  addTask: (listId: ID, title: string) => void
+  updateTask: (id: ID, patch: Partial<Pick<TaskDTO, 'title' | 'notes' | 'due' | 'starred'>>) => void
+  toggleTask: (id: ID) => void
+  toggleStar: (id: ID) => void
+  deleteTask: (id: ID) => void
+  clearCompleted: (listId: ID) => void
 
   addDailyTask: (title: string) => void
   renameDailyTask: (id: ID, title: string) => void
@@ -57,10 +75,121 @@ export const useStore = create<State>()(
       return {
         ...initial,
         screen: 'daily',
+        currentListId: initial.lists.find((l) => !l.deleted)?.id ?? null,
+        selectedTaskId: null,
         celebration: null,
 
-        setScreen: (screen) => set({ screen }),
+        setScreen: (screen) => set({ screen, selectedTaskId: null }),
         dismissCelebration: () => set({ celebration: null }),
+
+        // ---- lists ----
+        selectList: (id) => set({ currentListId: id, selectedTaskId: null }),
+        addList: (name) => {
+          const trimmed = name.trim()
+          if (!trimmed) return
+          const id = uid()
+          set((s) => ({
+            lists: [...s.lists, { id, name: trimmed, createdAt: nowIso(), updatedAt: nowMs(), deleted: false }],
+            dirty: { ...s.dirty, [`list:${id}`]: true },
+            currentListId: id,
+          }))
+        },
+        renameList: (id, name) => {
+          const trimmed = name.trim()
+          if (!trimmed) return
+          set((s) => ({
+            lists: s.lists.map((l) => (l.id === id ? { ...l, name: trimmed, updatedAt: nowMs() } : l)),
+            dirty: { ...s.dirty, [`list:${id}`]: true },
+          }))
+        },
+        deleteList: (id) =>
+          set((s) => {
+            const t = nowMs()
+            const dirty = { ...s.dirty, [`list:${id}`]: true as const }
+            const tasks = s.tasks.map((task) => {
+              if (task.listId !== id || task.deleted) return task
+              dirty[`task:${task.id}`] = true
+              return { ...task, deleted: true, updatedAt: t }
+            })
+            const lists = s.lists.map((l) => (l.id === id ? { ...l, deleted: true, updatedAt: t } : l))
+            const remaining = lists.filter((l) => !l.deleted)
+            return {
+              lists,
+              tasks,
+              dirty,
+              currentListId: s.currentListId === id ? remaining[0]?.id ?? null : s.currentListId,
+            }
+          }),
+
+        // ---- tasks ----
+        selectTask: (id) => set({ selectedTaskId: id }),
+        addTask: (listId, title) => {
+          const trimmed = title.trim()
+          if (!trimmed) return
+          const id = uid()
+          set((s) => ({
+            tasks: [
+              ...s.tasks,
+              {
+                id,
+                listId,
+                title: trimmed,
+                notes: '',
+                due: null,
+                starred: false,
+                completed: false,
+                completedAt: null,
+                createdAt: nowIso(),
+                updatedAt: nowMs(),
+                deleted: false,
+              },
+            ],
+            dirty: { ...s.dirty, [`task:${id}`]: true },
+          }))
+        },
+        updateTask: (id, patch) =>
+          set((s) => ({
+            tasks: s.tasks.map((task) => (task.id === id ? { ...task, ...patch, updatedAt: nowMs() } : task)),
+            dirty: { ...s.dirty, [`task:${id}`]: true },
+          })),
+        toggleTask: (id) =>
+          set((s) => ({
+            tasks: s.tasks.map((task) =>
+              task.id === id
+                ? {
+                    ...task,
+                    completed: !task.completed,
+                    completedAt: !task.completed ? nowIso() : null,
+                    updatedAt: nowMs(),
+                  }
+                : task,
+            ),
+            dirty: { ...s.dirty, [`task:${id}`]: true },
+          })),
+        toggleStar: (id) =>
+          set((s) => ({
+            tasks: s.tasks.map((task) =>
+              task.id === id ? { ...task, starred: !task.starred, updatedAt: nowMs() } : task,
+            ),
+            dirty: { ...s.dirty, [`task:${id}`]: true },
+          })),
+        deleteTask: (id) =>
+          set((s) => ({
+            tasks: s.tasks.map((task) => (task.id === id ? { ...task, deleted: true, updatedAt: nowMs() } : task)),
+            dirty: { ...s.dirty, [`task:${id}`]: true },
+            selectedTaskId: s.selectedTaskId === id ? null : s.selectedTaskId,
+          })),
+        clearCompleted: (listId) =>
+          set((s) => {
+            const t = nowMs()
+            const dirty = { ...s.dirty }
+            const tasks = s.tasks.map((task) => {
+              if (task.listId !== listId || !task.completed || task.deleted) return task
+              dirty[`task:${task.id}`] = true
+              return { ...task, deleted: true, updatedAt: t }
+            })
+            return { tasks, dirty }
+          }),
 
         addDailyTask: (title) => {
           const trimmed = title.trim()
@@ -219,6 +348,7 @@ export const useStore = create<State>()(
         dirty: s.dirty,
         lastSyncedAt: s.lastSyncedAt,
         screen: s.screen,
+        currentListId: s.currentListId,
       }),
     },
   ),

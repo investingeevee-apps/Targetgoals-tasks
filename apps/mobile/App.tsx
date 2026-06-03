@@ -5,13 +5,16 @@ import { StatusBar } from 'expo-status-bar'
 import Constants from 'expo-constants'
 import { useStore, type MobileScreen } from './src/store'
 import { initSync } from './src/sync/store'
+import { TasksScreen } from './src/screens/TasksScreen'
 import { DailyScreen } from './src/screens/DailyScreen'
 import { OverviewScreen } from './src/screens/OverviewScreen'
 import { SettingsScreen } from './src/screens/SettingsScreen'
 import { Celebration } from './src/components/Celebration'
+import { TaskDetailModal } from './src/components/TaskDetailModal'
 import { colors } from './src/theme'
 
 const TABS: { key: MobileScreen; label: string; icon: string }[] = [
+  { key: 'tasks', label: 'Tasks', icon: '✓' },
   { key: 'daily', label: 'Daily', icon: '🔁' },
   { key: 'overview', label: 'Overview', icon: '📊' },
   { key: 'settings', label: 'Sync', icon: '⚙️' },
@@ -38,6 +41,7 @@ export default function App() {
       <StatusBar style="light" />
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
         <View style={styles.body}>
+          {screen === 'tasks' && <TasksScreen />}
           {screen === 'daily' && <DailyScreen />}
           {screen === 'overview' && <OverviewScreen />}
           {screen === 'settings' && <SettingsScreen />}
@@ -58,6 +62,7 @@ export default function App() {
         </View>
 
         <Celebration />
+        <TaskDetailModal />
       </SafeAreaView>
     </SafeAreaProvider>
   )
