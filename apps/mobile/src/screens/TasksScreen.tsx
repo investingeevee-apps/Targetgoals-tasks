@@ -26,6 +26,7 @@ export function TasksScreen() {
   const toggleStar = useStore((s) => s.toggleStar)
   const selectTask = useStore((s) => s.selectTask)
   const clearCompleted = useStore((s) => s.clearCompleted)
+  const moveTask = useStore((s) => s.moveTask)
 
   const lists = useMemo(() => allLists.filter((l) => !l.deleted), [allLists])
   const currentList = lists.find((l) => l.id === currentListId) ?? lists[0]
@@ -44,10 +45,10 @@ export function TasksScreen() {
 
   const { active, done } = useMemo(() => {
     const mine = allTasks.filter((t) => t.listId === listId && !t.deleted)
-    const byStar = (a: TaskDTO, b: TaskDTO) =>
-      a.starred !== b.starred ? (a.starred ? -1 : 1) : a.createdAt.localeCompare(b.createdAt)
+    const byOrder = (a: TaskDTO, b: TaskDTO) =>
+      a.order - b.order || a.createdAt.localeCompare(b.createdAt)
     return {
-      active: mine.filter((t) => !t.completed).sort(byStar),
+      active: mine.filter((t) => !t.completed).sort(byOrder),
       done: mine
         .filter((t) => t.completed)
         .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
@@ -165,7 +166,14 @@ export function TasksScreen() {
           )}
 
           {active.map((t) => (
-            <TaskRow key={t.id} task={t} onToggle={toggleTask} onStar={toggleStar} onOpen={selectTask} />
+            <TaskRow
+              key={t.id}
+              task={t}
+              onToggle={toggleTask}
+              onStar={toggleStar}
+              onOpen={selectTask}
+              onMove={moveTask}
+            />
           ))}
 
           {done.length > 0 && (
@@ -177,7 +185,14 @@ export function TasksScreen() {
                 </Pressable>
               </View>
               {done.map((t) => (
-                <TaskRow key={t.id} task={t} onToggle={toggleTask} onStar={toggleStar} onOpen={selectTask} />
+                <TaskRow
+              key={t.id}
+              task={t}
+              onToggle={toggleTask}
+              onStar={toggleStar}
+              onOpen={selectTask}
+              onMove={moveTask}
+            />
               ))}
             </View>
           )}
@@ -192,14 +207,27 @@ function TaskRow({
   onToggle,
   onStar,
   onOpen,
+  onMove,
 }: {
   task: TaskDTO
   onToggle: (id: string) => void
   onStar: (id: string) => void
   onOpen: (id: string) => void
+  onMove: (id: string, dir: 'up' | 'down') => void
 }) {
+  const subDone = task.subtasks.filter((st) => st.completed).length
   return (
     <View style={styles.taskRow}>
+      {!task.completed && (
+        <View style={styles.moveCol}>
+          <Pressable onPress={() => onMove(task.id, 'up')} hitSlop={6}>
+            <Text style={styles.moveBtn}>▲</Text>
+          </Pressable>
+          <Pressable onPress={() => onMove(task.id, 'down')} hitSlop={6}>
+            <Text style={styles.moveBtn}>▼</Text>
+          </Pressable>
+        </View>
+      )}
       <Pressable onPress={() => onToggle(task.id)} hitSlop={8}>
         <View style={[styles.check, task.completed && styles.checkDone]}>
           {task.completed && <Text style={styles.checkMark}>✓</Text>}
@@ -213,6 +241,11 @@ function TaskRow({
           {task.notes && !task.completed ? (
             <Text style={styles.meta} numberOfLines={1}>
               {task.notes}
+            </Text>
+          ) : null}
+          {task.subtasks.length > 0 ? (
+            <Text style={styles.meta}>
+              ☑ {subDone}/{task.subtasks.length}
             </Text>
           ) : null}
           {task.due ? (
@@ -257,7 +290,9 @@ const styles = StyleSheet.create({
   addPlus: { color: colors.accent, fontSize: 18, fontWeight: '700' },
   addInput: { flex: 1, color: colors.text, fontSize: 15, paddingVertical: 4 },
   empty: { color: colors.textFaint, textAlign: 'center', marginTop: 24 },
-  taskRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 11 },
+  taskRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 11 },
+  moveCol: { justifyContent: 'center', marginTop: -2 },
+  moveBtn: { color: colors.textFaint, fontSize: 11, lineHeight: 14 },
   check: {
     width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.textFaint,
     alignItems: 'center', justifyContent: 'center', marginTop: 1,

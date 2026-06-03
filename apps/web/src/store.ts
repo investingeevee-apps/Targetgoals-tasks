@@ -10,6 +10,7 @@ import type {
   SyncChanges,
   TaskDTO,
 } from '@targetgoals/shared'
+import type { Subtask } from '@targetgoals/shared'
 import { computeStreaks, todayKey } from '@targetgoals/shared'
 import {
   STORE_KEY,
@@ -72,6 +73,13 @@ interface State {
   toggleStar: (id: ID) => void
   deleteTask: (id: ID) => void
   clearCompleted: (listId: ID) => void
+  moveTask: (id: ID, dir: 'up' | 'down') => void
+
+  // ---- subtasks ----
+  addSubtask: (taskId: ID, title: string) => void
+  toggleSubtask: (taskId: ID, subtaskId: ID) => void
+  renameSubtask: (taskId: ID, subtaskId: ID, title: string) => void
+  deleteSubtask: (taskId: ID, subtaskId: ID) => void
 
   // ---- daily tasks ----
   addDailyTask: (title: string) => void
@@ -181,6 +189,15 @@ export const useStore = create<State>()(
                 createdAt: nowIso(),
                 updatedAt: nowMs(),
                 deleted: false,
+                subtasks: [],
+                // new tasks go to the top of the list
+                order:
+                  Math.min(
+                    0,
+                    ...s.tasks
+                      .filter((t) => t.listId === listId && !t.deleted)
+                      .map((t) => t.order),
+                  ) - 1,
               },
             ],
             dirty: dirtyWith(s, 'task', id),
@@ -233,6 +250,88 @@ export const useStore = create<State>()(
             })
             return { tasks, dirty }
           }),
+        moveTask: (id, dir) =>
+          set((s) => {
+            const task = s.tasks.find((t) => t.id === id)
+            if (!task) return {}
+            // active tasks in this list, in display order
+            const ordered = s.tasks
+              .filter((t) => t.listId === task.listId && !t.deleted && !t.completed)
+              .sort((a, b) => a.order - b.order || a.createdAt.localeCompare(b.createdAt))
+            const i = ordered.findIndex((t) => t.id === id)
+            const j = dir === 'up' ? i - 1 : i + 1
+            if (j < 0 || j >= ordered.length) return {}
+            ;[ordered[i], ordered[j]] = [ordered[j], ordered[i]]
+            const orderById = new Map(ordered.map((t, idx) => [t.id, idx]))
+            const now = nowMs()
+            const dirty = { ...s.dirty }
+            const tasks = s.tasks.map((t) => {
+              const next = orderById.get(t.id)
+              if (next !== undefined && t.order !== next) {
+                dirty[`task:${t.id}`] = true
+                return { ...t, order: next, updatedAt: now }
+              }
+              return t
+            })
+            return { tasks, dirty }
+          }),
+
+        // ---- subtasks ----
+        addSubtask: (taskId, title) => {
+          const trimmed = title.trim()
+          if (!trimmed) return
+          const sub: Subtask = { id: uid(), title: trimmed, completed: false }
+          set((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId
+                ? { ...t, subtasks: [...t.subtasks, sub], updatedAt: nowMs() }
+                : t,
+            ),
+            dirty: dirtyWith(s, 'task', taskId),
+          }))
+        },
+        toggleSubtask: (taskId, subtaskId) =>
+          set((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId
+                ? {
+                    ...t,
+                    subtasks: t.subtasks.map((st) =>
+                      st.id === subtaskId ? { ...st, completed: !st.completed } : st,
+                    ),
+                    updatedAt: nowMs(),
+                  }
+                : t,
+            ),
+            dirty: dirtyWith(s, 'task', taskId),
+          })),
+        renameSubtask: (taskId, subtaskId, title) => {
+          const trimmed = title.trim()
+          if (!trimmed) return
+          set((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId
+                ? {
+                    ...t,
+                    subtasks: t.subtasks.map((st) =>
+                      st.id === subtaskId ? { ...st, title: trimmed } : st,
+                    ),
+                    updatedAt: nowMs(),
+                  }
+                : t,
+            ),
+            dirty: dirtyWith(s, 'task', taskId),
+          }))
+        },
+        deleteSubtask: (taskId, subtaskId) =>
+          set((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId
+                ? { ...t, subtasks: t.subtasks.filter((st) => st.id !== subtaskId), updatedAt: nowMs() }
+                : t,
+            ),
+            dirty: dirtyWith(s, 'task', taskId),
+          })),
 
         // ---- daily tasks ----
         addDailyTask: (title) => {

@@ -103,7 +103,7 @@ export function convertLegacy(): StoreData | null {
     return { id: l.id, name: l.name, createdAt: l.createdAt, updatedAt: t, deleted: false }
   })
 
-  const tasks: TaskDTO[] = (s.tasks ?? []).map((task) => {
+  const tasks: TaskDTO[] = (s.tasks ?? []).map((task, i) => {
     dirty[`task:${task.id}`] = true
     return {
       id: task.id,
@@ -117,6 +117,8 @@ export function convertLegacy(): StoreData | null {
       createdAt: task.createdAt,
       updatedAt: t,
       deleted: false,
+      subtasks: [],
+      order: i,
     }
   })
 
@@ -177,6 +179,8 @@ export function seedData(): StoreData {
       createdAt: nowIso(),
       updatedAt: t,
       deleted: false,
+      subtasks: [],
+      order: 0,
     },
     {
       id: uid(),
@@ -190,6 +194,8 @@ export function seedData(): StoreData {
       createdAt: nowIso(),
       updatedAt: t,
       deleted: false,
+      subtasks: [],
+      order: 1,
     },
   ]
 

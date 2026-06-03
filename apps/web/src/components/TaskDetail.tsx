@@ -1,12 +1,20 @@
-﻿import { useStore } from '../store'
+﻿import { useState } from 'react'
+import { useStore } from '../store'
 import type { TaskDTO } from '@targetgoals/shared'
-import { Close, Star, Trash } from './Icons'
+import { CheckCircle, Circle, Close, Plus, Star, Trash } from './Icons'
 
 export function TaskDetail({ task }: { task: TaskDTO }) {
   const updateTask = useStore((s) => s.updateTask)
   const toggleStar = useStore((s) => s.toggleStar)
   const deleteTask = useStore((s) => s.deleteTask)
   const selectTask = useStore((s) => s.selectTask)
+  const addSubtask = useStore((s) => s.addSubtask)
+  const toggleSubtask = useStore((s) => s.toggleSubtask)
+  const renameSubtask = useStore((s) => s.renameSubtask)
+  const deleteSubtask = useStore((s) => s.deleteSubtask)
+
+  const [subDraft, setSubDraft] = useState('')
+  const subDone = task.subtasks.filter((st) => st.completed).length
 
   return (
     <div className="flex w-80 shrink-0 flex-col border-l border-slate-800 bg-slate-950">
@@ -42,9 +50,56 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
             value={task.notes}
             onChange={(e) => updateTask(task.id, { notes: e.target.value })}
             rows={5}
-            placeholder="Add detailsâ€¦"
+            placeholder="Add details…"
             className="w-full resize-none rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-accent"
           />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500">
+            Subtasks {task.subtasks.length > 0 && `(${subDone}/${task.subtasks.length})`}
+          </label>
+          <div className="space-y-1">
+            {task.subtasks.map((st) => (
+              <div key={st.id} className="group/sub flex items-center gap-2">
+                <button
+                  className={st.completed ? 'text-accent' : 'text-slate-500 hover:text-slate-300'}
+                  onClick={() => toggleSubtask(task.id, st.id)}
+                >
+                  {st.completed ? <CheckCircle width={16} height={16} /> : <Circle width={16} height={16} />}
+                </button>
+                <input
+                  value={st.title}
+                  onChange={(e) => renameSubtask(task.id, st.id, e.target.value)}
+                  className={`flex-1 bg-transparent text-sm outline-none ${
+                    st.completed ? 'text-slate-500 line-through' : 'text-slate-200'
+                  }`}
+                />
+                <button
+                  className="text-slate-600 opacity-0 hover:text-rose-400 group-hover/sub:opacity-100"
+                  onClick={() => deleteSubtask(task.id, st.id)}
+                  title="Delete subtask"
+                >
+                  <Trash width={14} height={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 focus-within:border-accent">
+            <Plus width={14} height={14} className="text-accent" />
+            <input
+              value={subDraft}
+              onChange={(e) => setSubDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  addSubtask(task.id, subDraft)
+                  setSubDraft('')
+                }
+              }}
+              placeholder="Add a subtask"
+              className="flex-1 bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-600"
+            />
+          </div>
         </div>
 
         <div>

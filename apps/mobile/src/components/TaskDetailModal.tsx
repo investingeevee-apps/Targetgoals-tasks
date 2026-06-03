@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { addDays, formatDue, todayKey } from '@targetgoals/shared'
 import { useStore } from '../store'
@@ -17,9 +18,16 @@ export function TaskDetailModal() {
   const toggleStar = useStore((s) => s.toggleStar)
   const deleteTask = useStore((s) => s.deleteTask)
   const selectTask = useStore((s) => s.selectTask)
+  const addSubtask = useStore((s) => s.addSubtask)
+  const toggleSubtask = useStore((s) => s.toggleSubtask)
+  const renameSubtask = useStore((s) => s.renameSubtask)
+  const deleteSubtask = useStore((s) => s.deleteSubtask)
+
+  const [subDraft, setSubDraft] = useState('')
 
   const open = screen === 'tasks' && !!task
   if (!task) return null
+  const subDone = task.subtasks.filter((st) => st.completed).length
 
   return (
     <Modal transparent visible={open} animationType="slide" onRequestClose={() => selectTask(null)}>
@@ -45,6 +53,42 @@ export function TaskDetailModal() {
               placeholderTextColor={colors.textFaint}
               multiline
             />
+
+            <Text style={styles.label}>
+              Subtasks {task.subtasks.length > 0 ? `(${subDone}/${task.subtasks.length})` : ''}
+            </Text>
+            {task.subtasks.map((st) => (
+              <View key={st.id} style={styles.subRow}>
+                <Pressable onPress={() => toggleSubtask(task.id, st.id)} hitSlop={8}>
+                  <View style={[styles.subCheck, st.completed && styles.subCheckDone]}>
+                    {st.completed && <Text style={styles.subMark}>✓</Text>}
+                  </View>
+                </Pressable>
+                <TextInput
+                  style={[styles.subInput, st.completed && styles.subInputDone]}
+                  value={st.title}
+                  onChangeText={(title) => renameSubtask(task.id, st.id, title)}
+                />
+                <Pressable onPress={() => deleteSubtask(task.id, st.id)} hitSlop={8}>
+                  <Text style={styles.subTrash}>🗑</Text>
+                </Pressable>
+              </View>
+            ))}
+            <View style={styles.subAddRow}>
+              <Text style={styles.subPlus}>＋</Text>
+              <TextInput
+                style={styles.subAddInput}
+                value={subDraft}
+                onChangeText={setSubDraft}
+                placeholder="Add a subtask"
+                placeholderTextColor={colors.textFaint}
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  addSubtask(task.id, subDraft)
+                  setSubDraft('')
+                }}
+              />
+            </View>
 
             <Text style={styles.label}>Due date {task.due ? `· ${formatDue(task.due)}` : ''}</Text>
             <View style={styles.chipRow}>
@@ -105,6 +149,23 @@ const styles = StyleSheet.create({
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15,
   },
   titleInput: { fontSize: 16, fontWeight: '600' },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
+  subCheck: {
+    width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.textFaint,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  subCheckDone: { backgroundColor: colors.accent, borderColor: colors.accent },
+  subMark: { color: '#fff', fontSize: 12, fontWeight: '900', lineHeight: 14 },
+  subInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 2 },
+  subInputDone: { color: colors.textFaint, textDecorationLine: 'line-through' },
+  subTrash: { fontSize: 14, opacity: 0.7 },
+  subAddRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 7,
+  },
+  subPlus: { color: colors.accent, fontSize: 16, fontWeight: '700' },
+  subAddInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 2 },
   notesInput: { minHeight: 90, textAlignVertical: 'top' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
   chip: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },

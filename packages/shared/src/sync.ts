@@ -20,6 +20,13 @@ export interface ListDTO extends SyncMeta {
   createdAt: string
 }
 
+/** A checklist item embedded in a task. */
+export interface Subtask {
+  id: string
+  title: string
+  completed: boolean
+}
+
 export interface TaskDTO extends SyncMeta {
   id: string
   listId: string
@@ -30,6 +37,10 @@ export interface TaskDTO extends SyncMeta {
   completed: boolean
   completedAt: string | null
   createdAt: string
+  /** Embedded checklist; synced with the task. */
+  subtasks: Subtask[]
+  /** Manual sort position within the list (ascending). */
+  order: number
 }
 
 export interface DailyTaskDTO extends SyncMeta {

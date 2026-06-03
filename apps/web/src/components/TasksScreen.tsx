@@ -20,12 +20,10 @@ export function TasksScreen() {
 
   const { active, done } = useMemo(() => {
     const mine = tasks.filter((t) => t.listId === currentListId && !t.deleted)
-    const byStarThenCreated = (a: typeof mine[number], b: typeof mine[number]) => {
-      if (a.starred !== b.starred) return a.starred ? -1 : 1
-      return a.createdAt.localeCompare(b.createdAt)
-    }
+    const byOrder = (a: typeof mine[number], b: typeof mine[number]) =>
+      a.order - b.order || a.createdAt.localeCompare(b.createdAt)
     return {
-      active: mine.filter((t) => !t.completed).sort(byStarThenCreated),
+      active: mine.filter((t) => !t.completed).sort(byOrder),
       done: mine
         .filter((t) => t.completed)
         .sort((a, b) =>

@@ -2,6 +2,7 @@ import { pathToFileURL } from 'node:url'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import type { Subtask } from '@targetgoals/shared'
 import { DB_PATH } from './config.js'
 
 // ---- schema (column names are snake_case; field names camelCase) ----
@@ -26,6 +27,8 @@ export const tasks = sqliteTable('tasks', {
   createdAt: text('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
   deleted: integer('deleted', { mode: 'boolean' }).notNull().default(false),
+  subtasks: text('subtasks', { mode: 'json' }).$type<Subtask[]>().notNull().default([]),
+  order: integer('sort_order').notNull().default(0),
 })
 
 export const dailyTasks = sqliteTable('daily_tasks', {
@@ -78,7 +81,9 @@ CREATE TABLE IF NOT EXISTS tasks (
   completed_at TEXT,
   created_at TEXT NOT NULL,
   updated_at INTEGER NOT NULL,
-  deleted INTEGER NOT NULL DEFAULT 0
+  deleted INTEGER NOT NULL DEFAULT 0,
+  subtasks TEXT NOT NULL DEFAULT '[]',
+  sort_order INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS daily_tasks (
   id TEXT PRIMARY KEY,
@@ -108,7 +113,19 @@ CREATE INDEX IF NOT EXISTS idx_daily_completions_updated ON daily_completions(up
 CREATE INDEX IF NOT EXISTS idx_daily_completions_date ON daily_completions(date_key);
 `
 
-/** Create tables/indexes if they don't exist yet (idempotent). */
+/** Add a column if it doesn't exist yet (idempotent migration). */
+async function addColumnIfMissing(table: string, columnDef: string): Promise<void> {
+  try {
+    await client.execute(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`)
+  } catch {
+    // column already exists — ignore
+  }
+}
+
+/** Create tables/indexes if they don't exist yet, and migrate older DBs. */
 export async function initDb(): Promise<void> {
   await client.executeMultiple(DDL)
+  // migrations for databases created before these columns existed
+  await addColumnIfMissing('tasks', "subtasks TEXT NOT NULL DEFAULT '[]'")
+  await addColumnIfMissing('tasks', 'sort_order INTEGER NOT NULL DEFAULT 0')
 }
