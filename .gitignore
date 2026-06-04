@@ -53,3 +53,8 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Google Play service account key (never commit)
+google-service-account*.json
+**/google-service-account*.json
+play-service-account*.json
