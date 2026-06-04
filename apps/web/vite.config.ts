@@ -39,7 +39,7 @@ export default defineConfig({
         short_name: 'TargetGoals',
         description:
           'Local-first tasks with recurring daily tasks, streaks, and a completion overview.',
-        theme_color: '#1a73e8',
+        theme_color: '#1E84E3',
         background_color: '#0b1220',
         display: 'standalone',
         orientation: 'portrait',

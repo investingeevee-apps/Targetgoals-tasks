@@ -78,7 +78,7 @@ export function Celebration() {
         {/* glow */}
         <div
           className={`absolute inset-x-0 -top-px mx-auto h-24 w-3/4 rounded-full blur-3xl ${
-            allDone ? 'bg-emerald-500/30' : 'bg-orange-500/30'
+            allDone ? 'bg-emerald-500/30' : 'bg-flame/30'
           }`}
         />
 
@@ -86,7 +86,7 @@ export function Celebration() {
           {allDone ? (
             <div className="mx-auto mb-2 text-6xl">🎉</div>
           ) : (
-            <div className="animate-flame mx-auto mb-3 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-orange-400 to-rose-500 text-white shadow-lg shadow-orange-500/30">
+            <div className="animate-flame mx-auto mb-3 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-flame to-rose-500 text-white shadow-lg shadow-flame/30">
               <Flame width={34} height={34} fill="currentColor" />
             </div>
           )}
@@ -105,7 +105,7 @@ export function Celebration() {
             className={`mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${
               allDone
                 ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-orange-500/15 text-orange-400'
+                : 'bg-flame/15 text-flame'
             }`}
           >
             <Flame width={16} height={16} />

@@ -36,7 +36,7 @@ export function TodayWidget({ streak, done, total, tasks }: WidgetData) {
         <TextWidget text="Daily" style={{ fontSize: 15, fontWeight: '700', color: '#ffffff' }} />
         <TextWidget
           text={`🔥 ${streak}d`}
-          style={{ fontSize: 13, fontWeight: '700', color: '#f97316' }}
+          style={{ fontSize: 13, fontWeight: '700', color: '#E37D1E' }}
         />
       </FlexWidget>
 
@@ -52,7 +52,7 @@ export function TodayWidget({ streak, done, total, tasks }: WidgetData) {
         >
           <TextWidget
             text={t.done ? '✓' : '○'}
-            style={{ fontSize: 13, color: t.done ? '#1a73e8' : '#64748b', marginRight: 8 }}
+            style={{ fontSize: 13, color: t.done ? '#1E84E3' : '#64748b', marginRight: 8 }}
           />
           <TextWidget
             text={t.title}

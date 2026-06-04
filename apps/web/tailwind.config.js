@@ -5,10 +5,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Google Tasks-ish blue accent
+        // Brand blue
         accent: {
-          DEFAULT: '#1a73e8',
-          hover: '#1b66c9',
+          DEFAULT: '#1E84E3',
+          hover: '#1970C1',
+        },
+        // Brand orange (streak / flame motif)
+        flame: {
+          DEFAULT: '#E37D1E',
+          hover: '#C96D15',
         },
       },
       fontFamily: {

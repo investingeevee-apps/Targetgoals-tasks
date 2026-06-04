@@ -75,7 +75,7 @@ function renderPage(payload: PairingPayload, qrSvg: string): string {
     border: 1px solid #1e293b; border-radius: 20px; padding: 28px; text-align: center;
   }
   .brand { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom: 18px; }
-  .dot { width: 34px; height: 34px; border-radius: 9px; background: #1a73e8; display:grid; place-items:center; }
+  .dot { width: 34px; height: 34px; border-radius: 9px; background: #1E84E3; display:grid; place-items:center; }
   h1 { font-size: 18px; margin: 0; }
   .qr { background:#fff; padding:14px; border-radius:14px; display:inline-block; margin: 8px 0 18px; }
   .qr svg { display:block; }

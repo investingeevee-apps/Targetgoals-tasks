@@ -50,7 +50,7 @@ export function DailyScreen() {
             <h1 className="text-2xl font-bold text-white">Daily tasks</h1>
             <p className="text-sm text-slate-400">{formatLongDate(key)}</p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-orange-500/10 px-3 py-1.5 text-sm font-semibold text-orange-400">
+          <div className="inline-flex items-center gap-2 rounded-full bg-flame/10 px-3 py-1.5 text-sm font-semibold text-flame">
             <Flame width={16} height={16} />
             {streaks.currentStreak} day streak
           </div>
