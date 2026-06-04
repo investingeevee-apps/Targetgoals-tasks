@@ -2,11 +2,54 @@ import { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, Switch, Text, TextInput, View, Pressable } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import type { BarcodeScanningResult } from 'expo-camera'
+import * as Clipboard from 'expo-clipboard'
 import type { PairingPayload } from '@targetgoals/shared'
 import { useSync } from '../sync/store'
 import { useStore } from '../store'
 import { formatTime, shiftTime, useNotifPrefs } from '../notifications/store'
 import { colors } from '../theme'
+
+function DataSection() {
+  const exportData = useStore((s) => s.exportData)
+  const importData = useStore((s) => s.importData)
+  const [msg, setMsg] = useState<string | null>(null)
+  const [isError, setIsError] = useState(false)
+
+  async function onExport() {
+    await Clipboard.setStringAsync(exportData())
+    setIsError(false)
+    setMsg('Backup copied to clipboard. Paste it somewhere safe — notes, email, or a file.')
+  }
+  async function onImport() {
+    const text = await Clipboard.getStringAsync()
+    const res = importData(text)
+    setIsError(!res.ok)
+    setMsg(
+      res.ok
+        ? `Restored: ${res.counts!.tasks} tasks, ${res.counts!.dailyTasks} habits, ${res.counts!.completions} completions.`
+        : res.error ?? 'Import failed.',
+    )
+  }
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Backup</Text>
+      <Text style={styles.subtle}>
+        Your data lives on this device. Copy a backup so you don't lose it if you reinstall,
+        and restore it on a new phone.
+      </Text>
+      <View style={styles.btnRow}>
+        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={onExport}>
+          <Text style={styles.secondaryBtnText}>Copy backup</Text>
+        </Pressable>
+        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={onImport}>
+          <Text style={styles.secondaryBtnText}>Restore from clipboard</Text>
+        </Pressable>
+      </View>
+      {msg ? <Text style={isError ? styles.error : styles.okMsg}>{msg}</Text> : null}
+    </View>
+  )
+}
 
 function TimeRow({ label, value, onChange }: { label: string; value: string; onChange: (t: string) => void }) {
   return (
@@ -144,76 +187,86 @@ export function SettingsScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.h1}>Sync &amp; devices</Text>
+      <Text style={styles.h1}>Settings</Text>
       <Text style={styles.subtle}>
-        Connect to your TargetGoals server to sync across devices. Open its{' '}
-        <Text style={styles.code}>/pair</Text> page to scan or copy the URL + token.
+        Your tasks and habits are stored on this device — no account needed.
       </Text>
 
-      <View style={styles.statusRow}>
-        <View style={[styles.dot, { backgroundColor: statusColor(status) }]} />
-        <Text style={styles.statusText}>{statusLabel(status)}</Text>
-        {connected ? <Text style={styles.subtle}>· synced {relativeTime(lastSyncedAt)}</Text> : null}
-      </View>
+      <NotificationsSection />
 
-      {!connected && (
-        <Pressable style={styles.primaryBtn} onPress={openScanner}>
-          <Text style={styles.primaryBtnText}>Scan pairing QR</Text>
-        </Pressable>
-      )}
+      <DataSection />
 
-      <Text style={styles.label}>Server URL</Text>
-      <TextInput
-        style={styles.input}
-        value={url}
-        onChangeText={setUrl}
-        editable={!connected}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="url"
-        placeholder="https://your-pc.tailnet.ts.net"
-        placeholderTextColor={colors.textFaint}
-      />
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Sync across devices (optional)</Text>
+        <Text style={styles.subtle}>
+          Run your own TargetGoals server and pair to sync between devices. Everything
+          works without it — this is for power users. Open the server's{' '}
+          <Text style={styles.code}>/pair</Text> page to scan or copy the URL + token.
+        </Text>
 
-      <Text style={styles.label}>Token</Text>
-      <TextInput
-        style={styles.input}
-        value={token}
-        onChangeText={setToken}
-        editable={!connected}
-        autoCapitalize="none"
-        autoCorrect={false}
-        secureTextEntry
-        placeholder="paste the token from /pair"
-        placeholderTextColor={colors.textFaint}
-      />
+        <View style={styles.statusRow}>
+          <View style={[styles.dot, { backgroundColor: statusColor(status) }]} />
+          <Text style={styles.statusText}>{statusLabel(status)}</Text>
+          {connected ? <Text style={styles.subtle}>· synced {relativeTime(lastSyncedAt)}</Text> : null}
+        </View>
 
-      {lastError && status === 'error' ? <Text style={styles.error}>{lastError}</Text> : null}
-
-      <View style={styles.btnRow}>
-        {connected ? (
-          <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={disconnect}>
-            <Text style={styles.secondaryBtnText}>Disconnect</Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            style={[styles.primaryBtn, styles.flex, (busy || !url || !token) && styles.disabled]}
-            disabled={busy || !url || !token}
-            onPress={() => onConnect()}
-          >
-            <Text style={styles.primaryBtnText}>{busy ? 'Connecting…' : 'Connect'}</Text>
+        {!connected && (
+          <Pressable style={styles.primaryBtn} onPress={openScanner}>
+            <Text style={styles.primaryBtnText}>Scan pairing QR</Text>
           </Pressable>
         )}
-        <Pressable
-          style={[styles.secondaryBtn, !connected && styles.disabled]}
-          disabled={!connected}
-          onPress={() => syncNow()}
-        >
-          <Text style={styles.secondaryBtnText}>Sync now</Text>
-        </Pressable>
-      </View>
 
-      <NotificationsSection />
+        <Text style={styles.label}>Server URL</Text>
+        <TextInput
+          style={styles.input}
+          value={url}
+          onChangeText={setUrl}
+          editable={!connected}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+          placeholder="https://your-pc.tailnet.ts.net"
+          placeholderTextColor={colors.textFaint}
+        />
+
+        <Text style={styles.label}>Token</Text>
+        <TextInput
+          style={styles.input}
+          value={token}
+          onChangeText={setToken}
+          editable={!connected}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+          placeholder="paste the token from /pair"
+          placeholderTextColor={colors.textFaint}
+        />
+
+        {lastError && status === 'error' ? <Text style={styles.error}>{lastError}</Text> : null}
+
+        <View style={styles.btnRow}>
+          {connected ? (
+            <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={disconnect}>
+              <Text style={styles.secondaryBtnText}>Disconnect</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[styles.primaryBtn, styles.flex, (busy || !url || !token) && styles.disabled]}
+              disabled={busy || !url || !token}
+              onPress={() => onConnect()}
+            >
+              <Text style={styles.primaryBtnText}>{busy ? 'Connecting…' : 'Connect'}</Text>
+            </Pressable>
+          )}
+          <Pressable
+            style={[styles.secondaryBtn, !connected && styles.disabled]}
+            disabled={!connected}
+            onPress={() => syncNow()}
+          >
+            <Text style={styles.secondaryBtnText}>Sync now</Text>
+          </Pressable>
+        </View>
+      </View>
     </ScrollView>
   )
 }
@@ -240,6 +293,8 @@ const styles = StyleSheet.create({
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 14,
   },
   error: { color: colors.rose, fontSize: 12, marginTop: 12 },
+  okMsg: { color: colors.green, fontSize: 12, marginTop: 12 },
+  section: { marginTop: 28, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 18 },
   btnRow: { flexDirection: 'row', gap: 10, marginTop: 20 },
   flex: { flex: 1 },
   primaryBtn: { backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 16 },

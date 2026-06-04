@@ -84,6 +84,14 @@ interface State {
   applyServerChanges: (changes: Partial<SyncChanges>) => void
   markSynced: (serverNow: number, synced: DirtySnapshot) => void
   dropUnsyncedSeeds: () => void
+
+  // ---- local backup (offline-first: no server required) ----
+  exportData: () => string
+  importData: (json: string) => {
+    ok: boolean
+    error?: string
+    counts?: { lists: number; tasks: number; dailyTasks: number; completions: number }
+  }
 }
 
 export const useStore = create<State>()(
@@ -529,6 +537,65 @@ export const useStore = create<State>()(
             for (const c of dailyCompletions) dirty[`completion:${c.id}`] = true
             return { lists, tasks, dailyTasks, dailyCompletions, dirty }
           }),
+
+        // ---- local backup ----
+        exportData: () => {
+          const s = get()
+          return JSON.stringify({
+            app: 'targetgoals-tasks',
+            schema: 1,
+            exportedAt: new Date().toISOString(),
+            data: {
+              lists: s.lists,
+              tasks: s.tasks,
+              dailyTasks: s.dailyTasks,
+              dailyCompletions: s.dailyCompletions,
+            },
+          })
+        },
+        importData: (json) => {
+          let parsed: unknown
+          try {
+            parsed = JSON.parse(json)
+          } catch {
+            return { ok: false, error: "That doesn't look like backup text (not valid JSON)." }
+          }
+          const d = (parsed as { data?: Record<string, unknown> })?.data
+          if (!d || !Array.isArray(d.tasks) || !Array.isArray(d.dailyTasks)) {
+            return { ok: false, error: "This doesn't look like a TargetGoals backup." }
+          }
+          // Merge with last-write-wins and mark imported rows dirty so they also
+          // upload if the user later connects a server.
+          set((s) => {
+            const dirty = { ...s.dirty }
+            const mark = (kind: string, rows: { id: string }[] | undefined) => {
+              for (const r of rows ?? []) dirty[`${kind}:${r.id}`] = true
+            }
+            const lists = (d.lists as SyncChanges['lists']) ?? []
+            const tasks = (d.tasks as TaskDTO[]) ?? []
+            const dailyTasks = (d.dailyTasks as DailyTaskDTO[]) ?? []
+            const completions = (d.dailyCompletions as DailyCompletionDTO[]) ?? []
+            mark('list', lists); mark('task', tasks)
+            mark('dailyTask', dailyTasks); mark('completion', completions)
+            return {
+              lists: mergeById(s.lists, lists),
+              tasks: mergeById(s.tasks, tasks),
+              dailyTasks: mergeById(s.dailyTasks, dailyTasks),
+              dailyCompletions: mergeById(s.dailyCompletions, completions),
+              dirty,
+            }
+          })
+          const n = (a: unknown) => (Array.isArray(a) ? a.length : 0)
+          return {
+            ok: true,
+            counts: {
+              lists: n(d.lists),
+              tasks: n(d.tasks),
+              dailyTasks: n(d.dailyTasks),
+              completions: n(d.dailyCompletions),
+            },
+          }
+        },
       }
     },
     {

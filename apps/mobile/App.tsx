@@ -12,13 +12,14 @@ import { SettingsScreen } from './src/screens/SettingsScreen'
 import { Celebration } from './src/components/Celebration'
 import { TaskDetailModal } from './src/components/TaskDetailModal'
 import { UpdateBanner } from './src/components/UpdateBanner'
+import { WelcomeModal } from './src/components/WelcomeModal'
 import { colors } from './src/theme'
 
 const TABS: { key: MobileScreen; label: string; icon: string }[] = [
   { key: 'tasks', label: 'Tasks', icon: '✓' },
   { key: 'daily', label: 'Daily', icon: '🔁' },
   { key: 'overview', label: 'Overview', icon: '📊' },
-  { key: 'settings', label: 'Sync', icon: '⚙️' },
+  { key: 'settings', label: 'Settings', icon: '⚙️' },
 ]
 
 export default function App() {
@@ -65,6 +66,7 @@ export default function App() {
         <Celebration />
         <TaskDetailModal />
         <UpdateBanner />
+        <WelcomeModal />
       </SafeAreaView>
     </SafeAreaProvider>
   )
