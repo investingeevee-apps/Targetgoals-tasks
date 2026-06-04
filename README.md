@@ -137,6 +137,9 @@ To keep it running and reach it from your phone anywhere, see
 **[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)** — Windows auto-start
 (`npm run service:install -w @targetgoals/server`), Tailscale, and HTTPS setup.
 
+Running it day-to-day — publishing updates (OTA vs APK), versioning, and the
+server — is covered in **[docs/MANAGING.md](docs/MANAGING.md)**.
+
 Endpoints: `GET /api/health` (open), `POST /api/sync` (push+pull), `GET /api/sync?since=`
 (pull), `GET /api/state`, and `GET /pair`. All `/api/*` except health require
 `Authorization: Bearer <token>`. See [`docs/PLAN.md`](docs/PLAN.md) for the full
