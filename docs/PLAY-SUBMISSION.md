@@ -9,11 +9,16 @@ need **your** Google account. Commands run from `apps/mobile`.
 - [ ] **Google Play Developer account** — register at
       [play.google.com/console](https://play.google.com/console) and pay the one-time
       **$25** fee. (Personal account is fine; note the closed-testing requirement in §5.)
-- [ ] **Host the privacy policy** to get a public URL:
-  - Easiest: enable **GitHub Pages** on the repo. In GitHub → Settings → Pages →
-    Build from branch → `main` / `/docs`. Your policy will be at
-    `https://investingeevee-apps.github.io/Targetgoals-tasks/privacy.html`.
-  - Verify the URL loads, then use it for the Play listing + Data safety.
+- [ ] **Host the privacy policy** at a public URL via **GitHub Pages**:
+  - GitHub → Settings → Pages → Source = "Deploy from a branch" → `main` / `/docs` → Save.
+  - The repo's `docs/CNAME` points it at the custom domain, so the policy lives at
+    **`https://targetgoals.ca/privacy.html`** (and `targetgoals.ca` shows a landing page).
+    DNS records for `targetgoals.ca` → GitHub Pages:
+    - Apex `@` **A** records: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+    - `www` **CNAME** → `investingeevee-apps.github.io`
+    - (Recommended) verify the domain in GitHub org → Settings → Pages, via the TXT
+      challenge GitHub provides.
+  - After DNS propagates, tick **Enforce HTTPS**, then use the URL for the listing + Data safety.
 
 ## 1. Build the production AAB
 

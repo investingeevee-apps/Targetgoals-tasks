@@ -6,7 +6,7 @@ Copy/paste content for the Play Console store listing. Tweak to taste.
 - **App name** (max 30): `TargetGoals Tasks`
 - **Category:** Productivity
 - **Contact email:** investingeevee@gmail.com
-- **Privacy policy URL:** _your hosted_ `docs/privacy.html` (see PLAY-SUBMISSION.md, step "Privacy policy URL")
+- **Privacy policy URL:** `https://targetgoals.ca/privacy.html` (see PLAY-SUBMISSION.md for DNS/Pages setup)
 - **Default language:** English (United States)
 
 ## Short description (max 80 chars)
