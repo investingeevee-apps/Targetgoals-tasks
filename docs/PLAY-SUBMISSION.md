@@ -52,16 +52,31 @@ automate with `eas submit`.
 - [ ] In Play Console → **Testing → Internal testing → Create new release** → upload the
       `.aab` from the EAS build page. Accept **Play App Signing** enrollment.
 
-**Option B — automated with `eas submit`:**
-- [ ] Create a **Google Cloud service account** with the **Google Play Android Developer
-      API** enabled, grant it access in Play Console (Users & permissions), download its
-      JSON key.
-- [ ] Point `eas.json` → `submit.production.android.serviceAccountKeyPath` at that JSON
-      (keep the key **out of git**), then:
+**Option B — automated with `eas submit`** (set up after the first manual release):
+
+`eas.json` is already wired to read the key at `apps/mobile/google-service-account.json`
+(git-ignored) and submit to the **internal** track. To create that key:
+
+1. **Play Console → Setup → API access.** If prompted, accept terms and link/create a
+   Google Cloud project.
+2. Under **Service accounts**, click **Create new service account** → follow the link to
+   the **Google Cloud Console**.
+3. In Google Cloud → **IAM & Admin → Service Accounts → Create service account**
+   (name e.g. `eas-submit`). Create it, then open it → **Keys → Add key → Create new key
+   → JSON** → a `.json` downloads.
+4. Back in **Play Console → API access**, find the new service account → **Manage
+   permissions / Grant access** → give it at least **"Release to testing tracks"** and
+   **"Manage testing tracks"** (add "Release to production" later if you want production
+   automated too). Save/Invite.
+5. Save the downloaded JSON as **`apps/mobile/google-service-account.json`** (already in
+   `.gitignore` — never commit it).
+6. Then any release is one command:
 ```sh
 npx eas-cli submit -p android --profile production
 ```
-  This uploads the latest production build to the **internal** track (set in `eas.json`).
+  It uploads the latest production build (or `--id <buildId>` for a specific one) to the
+  internal track. Note: the **first** release should still be done manually (Option A) to
+  enroll Play App Signing; the service account automates everything after.
 
 ## 4. Store listing & graphics
 
