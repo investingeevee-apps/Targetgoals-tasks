@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { Chart, Help, ListIcon, Plus, Repeat } from './Icons'
 import { SyncStatusButton } from './SyncSettings'
+import wordmark from '../assets/wordmark.png'
 
 export function Sidebar() {
   const allLists = useStore((s) => s.lists)
@@ -38,18 +39,10 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-950">
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-white">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
-            <circle cx="12" cy="12" r="3.2" fill="currentColor" />
-          </svg>
-        </div>
-        <div className="leading-tight">
-          <div className="font-bold tracking-tight text-white">TargetGoals</div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Tasks
-          </div>
+      <div className="px-5 py-5">
+        <img src={wordmark} alt="TargetGoals" className="h-7 w-auto" />
+        <div className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+          Tasks
         </div>
       </div>
 

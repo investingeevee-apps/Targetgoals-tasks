@@ -7,12 +7,22 @@
     "scheme": "targetgoals",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0b1220",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b1220"
+    },
     "runtimeVersion": { "policy": "appVersion" },
     "updates": {
       "url": "https://u.expo.dev/6f90eccc-4125-4230-b256-9efe5cdab72f"
     },
     "android": {
       "package": "com.targetgoals.tasks",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.CAMERA"
