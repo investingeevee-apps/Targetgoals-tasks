@@ -16,10 +16,14 @@
     },
     "production": {
       "channel": "production",
-      "android": { "buildType": "apk" }
+      "autoIncrement": true
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal"
+      }
+    }
   }
 }

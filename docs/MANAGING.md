@@ -110,6 +110,10 @@ npx eas-cli update --branch preview --message "what changed"
 npx eas-cli update:list --branch preview
 ```
 
+> Once the app is on the Play Store, released users are on the **`production`** channel —
+> ship to them with `npx eas-cli update --branch production`. Keep `preview` for your own
+> testing. See **[docs/PLAY-SUBMISSION.md](PLAY-SUBMISSION.md)**.
+
 ---
 
 ## 5. Android — rebuild the APK
