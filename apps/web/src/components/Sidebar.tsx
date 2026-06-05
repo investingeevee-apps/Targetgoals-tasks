@@ -56,7 +56,7 @@ export function Sidebar() {
           onClick={() => setScreen('daily')}
         >
           <Repeat width={18} height={18} />
-          Daily tasks
+          Today
         </button>
         <button
           className={`${navBtn} ${

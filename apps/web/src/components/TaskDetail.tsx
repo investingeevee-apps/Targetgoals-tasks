@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import type { TaskDTO } from '@targetgoals/shared'
 import { CheckCircle, Circle, Close, Plus, Star, Trash } from './Icons'
 import { GripHandle, SortableList, SortableRow } from './Sortable'
+import { ScheduleControls } from './ScheduleControls'
 
 export function TaskDetail({ task }: { task: TaskDTO }) {
   const updateTask = useStore((s) => s.updateTask)
@@ -163,6 +164,8 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
             )}
           </div>
         </div>
+
+        <ScheduleControls task={task} />
 
         <button
           className={`flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
