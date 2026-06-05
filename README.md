@@ -1,168 +1,146 @@
+<div align="center">
+
 # TargetGoals Tasks
 
-A local-first, open-source task manager inspired by Google Tasks — with a twist:
-a **daily tasks** list that resets every day and tracks your completions over time
-in a Claude-style **Overview** (streaks, active days, and a contribution heatmap).
+**Tasks and daily habits with streaks — private, offline, no account needed.**
 
-Use it **solo** (all local, no account, no backend), or run your own tiny **sync
-server** to keep a desktop browser, an installable PWA, and an **Android app** (with a
-home‑screen widget + reminders) in sync — reachable from anywhere over **Tailscale**,
-with your data never leaving your machines.
+A clean, open‑source task & habit tracker for **web** and **Android**. Your data lives
+on your device; multi‑device sync via a server you run yourself is entirely optional.
 
-| Tasks | Daily | Overview |
+[Website](https://targetgoals.ca) · [Privacy](https://targetgoals.ca/privacy.html) · [MIT License](LICENSE)
+
+</div>
+
+---
+
+## What it does
+
+| Tasks | Daily habits | Overview |
 | --- | --- | --- |
-| Classic lists with notes, due dates & stars | Recurring habits that reset daily | Streaks + activity heatmap |
+| Lists, tasks, notes, due dates, stars, and inline **subtasks** | Recurring habits that reset every day at local midnight | Current & longest **streaks**, active days, and a contribution **heatmap** |
 
-## Get started
+- **Task lists** — multiple lists; tasks with notes, due dates, and stars. Subtasks show
+  **inline** as an expandable checklist, and tasks/subtasks can be **reordered**
+  (drag‑and‑drop on web, move buttons on mobile).
+- **Daily habits** — define recurring habits (e.g. *Exercise*, *Read*) that reset to
+  unchecked each day. Every day's completions are recorded forever.
+- **Overview** — total completions, active days, current & longest streaks, best day, and
+  a GitHub/Claude‑style activity heatmap.
+- **Streak celebrations** — a pop when you log your first habit of the day, and a bigger
+  one when you complete them all.
+- **Private & offline‑first** — everything works with no account and no connection. Data
+  is stored locally on the device.
+- **Local backup** — export/restore your data so you never lose it (mobile).
+- **Optional self‑hosted sync** — run your own tiny server to keep a desktop browser, an
+  installable PWA, and the Android app in sync — reachable anywhere over
+  [Tailscale](https://tailscale.com), with your data never leaving your machines.
+- **Installable** — the web app is a PWA; the Android app has a read‑only home‑screen
+  **widget** and opt‑in **reminders**, and updates over‑the‑air.
 
-1. **Run it / install it on your computer.** `npm install`, `npm run build`, then start
-   the server (`npm run start:server`) and open **http://localhost:4000**. In Chrome/Edge,
-   use the address‑bar **install** icon to pin it to your desktop as an app. (Or just
-   `npm run dev` for the dev server.)
-2. **Keep the server running** so the desktop app and phone always work — auto‑start at
-   login, no admin: `npm run startup:install -w @targetgoals/server`.
-3. **Pair your phone.** Install the Android app (Releases / [docs/ANDROID.md](docs/ANDROID.md)),
-   then in the desktop app's **Sync settings** show the pairing **QR** (enter your LAN IP
-   or Tailscale URL so the phone can reach it) and scan it from the app.
-4. **Reach it from anywhere** with [Tailscale](https://tailscale.com) — see
-   [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md). The in‑app **Setup & Help** page walks
-   through all of this too.
+## Platforms
 
-## Features
+- **Web / desktop** — a Vite + React PWA. Install it from the browser address bar.
+- **Android** — an Expo / React Native app (offline‑first, optional QR pairing, widget,
+  reminders, OTA updates). Heading to the Play Store as a public, offline‑first app — see
+  [`docs/PLAY-STORE.md`](docs/PLAY-STORE.md).
 
-- **Task lists** — create multiple lists, add tasks, notes, due dates, and stars,
-  just like Google Tasks. Completed tasks collapse into a "Completed" section.
-- **Daily tasks** — define recurring habits (e.g. *Exercise*, *Read*) that reset
-  to unchecked every day at local midnight. Each day's completions are logged
-  forever.
-- **Overview dashboard** — total completions, active days, current & longest
-  streaks, daily average, best day, and a GitHub/Claude-style activity heatmap.
-- **Hot streak popups** — a celebration when you log your first daily task of
-  the day, and a bigger confetti moment when you complete *all* of them.
-- **Local & private** — all data persists in `localStorage`. Export is as simple
-  as copying the `tally-store-v1` key.
+## Privacy
 
-## Android app
-
-`apps/mobile` is an Expo / React Native app (Daily + Overview, offline-first, QR
-pairing, home-screen widget, local reminders) that syncs with your server. Quick run:
-`npm run dev:mobile` then scan with **Expo Go**. Build a sideloadable APK with EAS — see
-**[docs/ANDROID.md](docs/ANDROID.md)**. Releases are automated via GitHub Actions
-(**[docs/RELEASING.md](docs/RELEASING.md)**): push a `v*` tag and the APK is built on EAS
-and attached to the GitHub Release.
-
-## Tech stack
-
-- [Vite](https://vite.dev/) + [React 19](https://react.dev/) + TypeScript
-- [Tailwind CSS](https://tailwindcss.com/) for styling
-- [Zustand](https://github.com/pmndrs/zustand) (with the `persist` middleware) for
-  state and localStorage persistence
+TargetGoals Tasks stores your data **on your device**. The project runs no servers and
+collects nothing — no accounts, no ads, no analytics. The optional sync feature sends data
+only to a server **you** run and control. Full policy:
+[targetgoals.ca/privacy.html](https://targetgoals.ca/privacy.html).
 
 ## Run it locally
 
+Requires Node.js 18+ (developed on Node 24). It's an **npm‑workspaces monorepo** — run
+scripts from the repo root.
+
 ```bash
-# install dependencies
-npm install
-
-# start the dev server (http://localhost:5173)
-npm run dev
-
-# build a production bundle into dist/
-npm run build
-
-# preview the production build
-npm run preview
+npm install            # installs all workspaces; builds @targetgoals/shared
+npm run dev            # web dev server  -> http://localhost:5173
+npm run build          # production web build into apps/web/dist
+npm test               # shared streak/date unit tests
 ```
 
-Requires Node.js 18+ (developed on Node 24).
+The web app works **standalone** (local storage) with no server. To sync across devices,
+run the optional server below.
+
+## Android app
+
+`apps/mobile` is an Expo (SDK 54) / React Native app. Quick run: `npm run dev:mobile` then
+scan with **Expo Go**. Build an installable APK / Play AAB with **EAS** — see
+[`docs/ANDROID.md`](docs/ANDROID.md). After the first build, JS/UI changes ship
+**over‑the‑air** with `eas update` (no reinstall). Day‑to‑day workflow — OTA vs rebuild,
+versioning, releases — is in [`docs/MANAGING.md`](docs/MANAGING.md).
+
+## Optional sync server (multi‑device)
+
+`apps/server` is a self‑hostable sync server (Express + libSQL/Drizzle). Your data lives in
+a git‑ignored SQLite file; a bearer token is generated on first run. Offline‑first delta
+sync (`updatedAt` + tombstones, last‑write‑wins).
+
+```bash
+npm run dev:server     # http://localhost:4000
+# open http://localhost:4000/pair to scan/copy the pairing QR + token
+```
+
+Then connect a client: in the web app's **Sync settings** (or the mobile **Settings** tab)
+scan the QR or paste the URL + token. To keep the server running and reach it from your
+phone anywhere (Windows auto‑start, Tailscale, HTTPS), see
+[`docs/SELF-HOSTING.md`](docs/SELF-HOSTING.md).
+
+API: `GET /api/health` (open) · `POST /api/sync` (push+pull) · `GET /api/sync?since=` ·
+`GET /api/state` · `GET /pair`. All `/api/*` except health require
+`Authorization: Bearer <token>`.
 
 ## How the daily reset works
 
-A daily task is never "completed" permanently. Instead, completing one writes its
-id into `dailyLog[today]`. The checklist's checked state is simply "is this task in
-today's log?" — so when the date rolls over to a new day, the list shows up empty
-again while every past day stays recorded. The Overview reads `dailyLog` to compute
-streaks and the heatmap. See [`apps/web/src/store.ts`](apps/web/src/store.ts) and
-[`packages/shared/src/stats.ts`](packages/shared/src/stats.ts).
+Completing a daily habit writes a **completion** row tagged with today's date; the
+checkbox is simply "is there a completion for this habit today?" When the date rolls over,
+the list shows empty again while every past day stays recorded. The Overview derives
+streaks and the heatmap from those completions. See
+[`packages/shared/src/stats.ts`](packages/shared/src/stats.ts) and the stores in
+`apps/web` / `apps/mobile`.
+
+## Tech stack
+
+- **Shared** — `@targetgoals/shared`: framework‑agnostic types, local‑timezone date
+  helpers, and streak/heatmap stats (with unit tests).
+- **Web** — [Vite](https://vite.dev/) + [React 19](https://react.dev/) + TypeScript +
+  [Tailwind](https://tailwindcss.com/) + [Zustand](https://github.com/pmndrs/zustand)
+  (persist) + vite‑plugin‑pwa. Drag‑and‑drop via @dnd‑kit.
+- **Server** — Node + Express + [libSQL](https://github.com/tursodatabase/libsql) +
+  [Drizzle ORM](https://orm.drizzle.team/); bearer‑token auth; QR pairing.
+- **Mobile** — Expo SDK 54 / React Native 0.81 / React 19; AsyncStorage; expo‑camera (QR),
+  expo‑notifications, expo‑updates (OTA), react‑native‑android‑widget.
 
 ## Project structure
 
-This is an **npm-workspaces monorepo**. Today it holds the shared core and the web
-app; the server and Android app described in [`docs/PLAN.md`](docs/PLAN.md) will be
-added as `apps/server` and `apps/mobile`.
-
 ```
 packages/
-  shared/                # @targetgoals/shared — framework-agnostic core
-    src/
-      types.ts           # shared data types
-      dates.ts           # local-timezone date helpers
-      stats.ts           # streak / heatmap computation
-      index.ts           # barrel export
+  shared/        # @targetgoals/shared — types, dates, streak/heatmap stats (+ tests)
 apps/
-  web/                   # @targetgoals/web — Vite + React client
-    src/
-      App.tsx            # layout shell
-      store.ts           # Zustand store + localStorage persistence
-      components/
-        Sidebar.tsx
-        TasksScreen.tsx     # classic task list view
-        TaskItem.tsx
-        TaskDetail.tsx      # notes / due date / star / delete panel
-        DailyScreen.tsx     # recurring daily checklist
-        OverviewScreen.tsx  # stat cards + heatmap
-        Heatmap.tsx
-        Celebration.tsx     # hot-streak / perfect-day popups
-        Icons.tsx
-docs/
-  PLAN.md                # roadmap: self-hosted sync, Android app & widget
+  web/           # @targetgoals/web — Vite + React PWA
+  server/        # @targetgoals/server — Express + libSQL/Drizzle sync server
+  mobile/        # @targetgoals/mobile — Expo / React Native Android app
+docs/            # plan, self-hosting, Android, managing, Play Store guides
+store-assets/    # Play Store icon + feature graphic
 ```
 
-Run `npm install`, `npm run dev`, and `npm run build` from the **repo root** — the
-workspace scripts delegate to the web app (and build `@targetgoals/shared` first).
+## Docs
 
-### Sync server (optional, for multi-device)
+- [`docs/PLAN.md`](docs/PLAN.md) — architecture & roadmap
+- [`docs/SELF-HOSTING.md`](docs/SELF-HOSTING.md) — run the server, Tailscale, HTTPS
+- [`docs/ANDROID.md`](docs/ANDROID.md) — Expo Go, EAS builds, pairing
+- [`docs/MANAGING.md`](docs/MANAGING.md) — day‑to‑day: OTA vs APK, versioning, server
+- [`docs/RELEASING.md`](docs/RELEASING.md) — automated APK releases via GitHub Actions
+- [`docs/PLAY-STORE.md`](docs/PLAY-STORE.md) · [`docs/PLAY-SUBMISSION.md`](docs/PLAY-SUBMISSION.md) · [`docs/STORE-LISTING.md`](docs/STORE-LISTING.md) · [`docs/DATA-SAFETY.md`](docs/DATA-SAFETY.md) — Play Store
 
-`apps/server` is a self-hostable sync server (Express + libSQL/Drizzle) so the web
-app and the upcoming Android app can share one source of truth. Your data lives in a
-git-ignored SQLite file; a bearer token is generated on first run.
+## Continuous integration
 
-```bash
-# (optional) configure: copy apps/server/.env.example -> apps/server/.env
-npm run dev:server        # start on http://localhost:4000
-# then open http://localhost:4000/pair to scan/copy the pairing QR + token
-```
-
-To keep it running and reach it from your phone anywhere, see
-**[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)** — Windows auto-start
-(`npm run service:install -w @targetgoals/server`), Tailscale, and HTTPS setup.
-
-Running it day-to-day — publishing updates (OTA vs APK), versioning, and the
-server — is covered in **[docs/MANAGING.md](docs/MANAGING.md)**.
-
-Endpoints: `GET /api/health` (open), `POST /api/sync` (push+pull), `GET /api/sync?since=`
-(pull), `GET /api/state`, and `GET /pair`. All `/api/*` except health require
-`Authorization: Bearer <token>`. See [`docs/PLAN.md`](docs/PLAN.md) for the full
-architecture (Tailscale, HTTPS, offline-first clients).
-
-**Connecting the web app:** start the server, run the web app, then click the status
-chip at the bottom of the sidebar (“Local only”) → enter the server URL + token from
-`/pair` → **Connect**. The web app is **offline-first**: it keeps working with no
-connection and syncs (last-write-wins) when the server is reachable. Existing
-single-device data is offered as a one-time **import**.
-
-## Publishing to GitHub
-
-This repo is initialized locally. To publish it:
-
-```bash
-# create a repo on github.com, then:
-git remote add origin https://github.com/<you>/targetgoals-tasks.git
-git branch -M main
-git push -u origin main
-```
-
-Or with the GitHub CLI: `gh repo create targetgoals-tasks --public --source=. --push`.
+GitHub Actions build + typecheck + run unit tests on every push/PR, and (on a `v*` tag)
+build the Android APK on EAS and attach it to the Release.
 
 ## License
 
