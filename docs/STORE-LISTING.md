@@ -11,18 +11,19 @@ Copy/paste content for the Play Console store listing. Tweak to taste.
 
 ## Short description (max 80 chars)
 ```
-Break big goals into daily tasks. Build streaks. Reach your targets.
+Goal planner & habit tracker: break big goals into daily tasks and streaks.
 ```
-Alternative (73): `Break your goals into daily tasks and habits. Build streaks, hit targets.`
+Alternative (68): `Break big goals into daily tasks. Build streaks. Reach your targets.`
 
 ## Full description (max 4000 chars)
 ```
 Big goals aren't reached in a day — they're reached by what you do EACH day.
-TargetGoals Tasks helps you break your goals down into clear daily tasks and habits,
-then keep showing up until you get there.
+TargetGoals Tasks is a goal planner and habit tracker that helps you break big goals
+into clear daily tasks and habits, then keep showing up until you get there.
 
-Training for a race, learning a skill, building a business, or just trying to stay on
-top of life? TargetGoals turns "someday" into a simple list for today.
+Want to run a 10K, learn Spanish, ship a side project, read 24 books this year, save
+for a big trip, or finally stick to a daily workout? Break the goal into a list, set the
+daily habits that move you forward, and let your streak keep you going.
 
 BREAK YOUR GOALS INTO DAILY ACTIONS
 • Create a list for each goal and break it into bite-size tasks.
@@ -31,8 +32,8 @@ BREAK YOUR GOALS INTO DAILY ACTIONS
 
 BUILD DAILY MOMENTUM
 • Set recurring daily habits that move you toward your goals.
-• Check them off each day — the list resets every morning, so you always know what's
-  next without losing your history.
+• Check them off each day — the habit tracker resets every morning, so you always know
+  what's next without losing your history.
 • Keep your streak alive and watch it grow.
 
 SEE YOUR PROGRESS
@@ -53,6 +54,9 @@ PRIVATE BY DESIGN
 SYNC ACROSS DEVICES (OPTIONAL)
 • Power users can run their own self-hosted server and sync across their devices.
 • Sync is optional and private — your data is only ever sent to a server you control.
+
+Whether you need a simple to-do list, a habit tracker, or a full goal planner,
+TargetGoals helps you turn big ambitions into daily action.
 
 OPEN SOURCE
 • TargetGoals Tasks is open source.
