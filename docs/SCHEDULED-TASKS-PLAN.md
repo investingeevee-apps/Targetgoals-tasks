@@ -57,62 +57,83 @@ today** at once — turn a backlog into a focused today list in seconds.
 Optional "You have N tasks scheduled for today" morning nudge, folded into the existing
 notification preferences — fully opt-in.
 
-## 4. Recurrence (later phase)
+## 4. Recurrence (in v1)
 
-The natural extension: a scheduled task can **repeat** — every weekday, specific weekdays
-(Mon/Wed/Fri), weekly, or monthly (e.g. "Pay rent on the 1st"). On each occurrence date it
-appears in Today.
+A scheduled task can be **one-time** (a single "Plan for" date) or **repeating**:
+- **Daily**, **Weekly** on chosen weekdays (e.g. Mon/Wed/Fri), or **Monthly** on a
+  day-of-month (e.g. the 1st). (Interval / end-date are easy later additions.)
+- On each matching date, the task appears in Today.
 
-Note the overlap with habits: a recurring scheduled task with per-occurrence completion is
-essentially a non-daily habit. To avoid duplicating concepts, recurrence is a **v2** that
-either (a) extends habits to support non-daily schedules, or (b) adds a recurrence rule to
-tasks with a generic per-date completion. Kept out of v1 to ship the simple, high-value
-single-date version first.
+**Per-occurrence completion.** A repeating task is never "done" forever — each day's
+instance is its own check, exactly like a habit. Completing Tuesday's instance doesn't
+touch next Tuesday. One-time scheduled tasks keep using the task's normal `completed` flag.
+
+**Carry-over applies to one-time tasks** — an unfinished one-time scheduled task stays in
+Today (overdue) until done/rescheduled. **Repeating occurrences are per-date** (like
+habits): each day shows that day's instance; a missed day doesn't pile up.
+
+> This makes a repeating scheduled task behave much like a habit, but it originates from a
+> list and keeps its notes/subtasks/goal link, and lives in Today's **Scheduled** section
+> rather than the **Habits** section. We keep them as separate surfaces but share the
+> per-occurrence completion mechanic.
 
 ## 5. Data model & sync
 
-Additive fields on `TaskDTO` (backward-compatible; same sync pattern):
+`TaskDTO` additions (backward-compatible):
 ```
-TaskDTO {
-  ...existing...
-  scheduledDate?: string | null   // 'YYYY-MM-DD' — the day it surfaces in Today
-  // (recurrence?: RecurrenceRule  — v2)
-}
+scheduledDate?: string | null            // one-time: the day it appears in Today
+recurrence?: {                           // repeating (null when one-time)
+  freq: 'daily' | 'weekly' | 'monthly',
+  weekdays?: number[],                   // weekly: 0=Sun .. 6=Sat
+  monthday?: number,                     // monthly: 1..31
+} | null
 ```
-- The Today view is **derived**: "scheduled tasks for today" = non-deleted, non-completed
-  (or completed-today) tasks where `scheduledDate <= today` (carry-over) or `=== today`
-  (exact), depending on the carry-over decision.
-- No new entity for v1 — completion uses the task's existing `completed`/`completedAt`.
-- Server: add a `scheduled_date` column to `tasks` via the idempotent `addColumnIfMissing`
-  migration; it rides the existing `/api/sync`.
-- Stores (web + mobile): a `scheduleTask(id, date)` / `unscheduleTask(id)` action, a
-  `toggleScheduledToday(id)` (completes the task), and a `scheduledForToday` selector.
-  persist migrate bump to backfill `scheduledDate: null`. Shared date helpers already
-  cover today/compare.
+New synced entity for repeating completions (mirrors `dailyCompletions`, so the existing
+habit path is untouched):
+```
+ScheduledCompletionDTO { id, taskId, dateKey, createdAt, updatedAt, deleted }
+```
+**Today derivation:**
+- one-time → tasks where `scheduledDate <= today` (carry-over) and not completed.
+- repeating → tasks whose recurrence **occurs on** today AND have no occurrence completion
+  for today.
 
-## 6. Phasing
+Server: add `scheduled_date` + `recurrence` (JSON) columns to `tasks`, plus a new
+`scheduled_completions` table — all via the idempotent DDL/`addColumnIfMissing`; they join
+`/api/sync`. Stores (web + mobile): `scheduleTask` / `setRecurrence` / `unschedule`,
+`toggleScheduledToday` (one-time → sets `completed`; repeating → adds/removes an occurrence
+completion), and a `todayAgenda` selector. Shared `recurs.ts`: `occursOn(rule, dateKey)`
+\+ unit tests. persist migrate bump (web/mobile) backfilling `scheduledDate: null`,
+`recurrence: null`, and `scheduledCompletions: []`.
 
-**Phase S1 — single-date scheduling (this feature)**
-- `scheduledDate` on tasks + server migration + sync.
-- Today view "Scheduled for today" section (with carry-over), schedule controls + "Do
-  today" quick action, complete-from-today, reschedule/snooze.
-- Web + mobile. Ships via OTA (mobile) / reload (web); server restart for the migration.
+## 6. Build order (vertical slices)
 
-**Phase S2 — recurrence**
-- Recurrence rules (weekdays/weekly/monthly), per-occurrence completion, recurring
-  reminders, "snooze series vs occurrence". Decide habits-vs-tasks unification first.
+**S1 — Data layer:** `scheduledDate` + `recurrence` on `TaskDTO`, `ScheduledCompletionDTO`,
+shared `occursOn` + tests; server columns + `scheduled_completions` table + sync; verify a
+one-time and a recurring task round-trip.
 
-## 7. Open decisions (confirm before building)
+**S2 — Stores + engine:** schedule/recurrence actions, occurrence completions,
+`todayAgenda` selector, sync wiring, persist migrate (web + mobile).
 
-1. **Schedule field** — add a separate **"Plan for" date** (distinct from the existing
-   *due* deadline), or **reuse the `due` date** + a "Show in Today" toggle? A separate
-   field cleanly separates "when I'll do it" from "when it's due"; reuse is fewer fields.
-2. **Carry-over** — should an unfinished scheduled task keep showing in Today after its
-   date (overdue, until done/rescheduled), or appear **only on the exact date**?
-3. **Recurrence timing** — single date in v1 (recurrence as v2), or include basic
-   recurrence now?
-4. **Daily tab naming** — keep **"Daily"** with a Habits + Scheduled split, or rename the
-   tab to **"Today"** to reflect the combined agenda?
+**S3 — Web UI:** rename **Daily → Today**; a **"Scheduled for today"** section (overdue
+one-time carry-over + today's recurring occurrences) above/below Habits; a
+schedule + recurrence editor in `TaskDetail` (None / Daily / Weekly·weekdays / Monthly·day +
+"Plan for" date); a **"Do today"** row action; reschedule / snooze; **plan-my-day**.
+
+**S4 — Mobile UI:** mirror (tab label **Today**, sections, recurrence editor, row actions);
+typecheck + bundle.
+
+**S5 — Polish & ship:** optional "N tasks scheduled today" reminder (existing opt-in
+notifications), copy, docs; deploy (server restart + web reload + mobile `eas update`).
+
+## 7. Decisions (locked)
+
+1. **Separate "Plan for" date** — distinct from the *due* deadline.
+2. **Carry-over** unfinished one-time scheduled tasks (overdue until done/rescheduled);
+   repeating occurrences are per-date (no pile-up), like habits.
+3. **Recurrence in v1** — daily / weekly-by-weekday / monthly-by-day, with per-occurrence
+   completion.
+4. **Rename the "Daily" tab → "Today"** (Habits + Scheduled sections inside).
 
 ## 8. Relationship to other work
 
