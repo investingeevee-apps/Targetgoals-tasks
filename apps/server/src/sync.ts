@@ -10,18 +10,22 @@ import {
   dailyCompletions,
   dailyTasks,
   db,
+  goals,
   lists,
+  scheduledCompletions,
   settings,
   tasks,
 } from './db.js'
 
 /** All changed rows (including tombstones) with `updatedAt` strictly after `since`. */
 export async function getChangesSince(since: number): Promise<SyncChanges> {
-  const [l, t, dt, dc, s] = await Promise.all([
+  const [l, t, dt, dc, g, sc, s] = await Promise.all([
     db.select().from(lists).where(gt(lists.updatedAt, since)),
     db.select().from(tasks).where(gt(tasks.updatedAt, since)),
     db.select().from(dailyTasks).where(gt(dailyTasks.updatedAt, since)),
     db.select().from(dailyCompletions).where(gt(dailyCompletions.updatedAt, since)),
+    db.select().from(goals).where(gt(goals.updatedAt, since)),
+    db.select().from(scheduledCompletions).where(gt(scheduledCompletions.updatedAt, since)),
     db.select().from(settings).where(gt(settings.updatedAt, since)),
   ])
   return {
@@ -29,6 +33,8 @@ export async function getChangesSince(since: number): Promise<SyncChanges> {
     tasks: t,
     dailyTasks: dt,
     dailyCompletions: dc,
+    goals: g,
+    scheduledCompletions: sc,
     settings: s,
   } as unknown as SyncChanges
 }
@@ -41,6 +47,8 @@ export async function getFullState(): Promise<SyncChanges> {
     tasks: all.tasks.filter((r) => !r.deleted),
     dailyTasks: all.dailyTasks.filter((r) => !r.deleted),
     dailyCompletions: all.dailyCompletions.filter((r) => !r.deleted),
+    goals: all.goals.filter((r) => !r.deleted),
+    scheduledCompletions: all.scheduledCompletions.filter((r) => !r.deleted),
     settings: all.settings,
   }
 }
@@ -102,6 +110,8 @@ export async function applyChanges(changes: Partial<SyncChanges>): Promise<numbe
     applied += await upsertRows(tx, tasks, tasks.id, changes.tasks)
     applied += await upsertRows(tx, dailyTasks, dailyTasks.id, changes.dailyTasks)
     applied += await upsertRows(tx, dailyCompletions, dailyCompletions.id, changes.dailyCompletions)
+    applied += await upsertRows(tx, goals, goals.id, changes.goals)
+    applied += await upsertRows(tx, scheduledCompletions, scheduledCompletions.id, changes.scheduledCompletions)
     applied += await upsertRows(tx, settings, settings.key, changes.settings)
     return applied
   })

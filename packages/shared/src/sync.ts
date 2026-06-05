@@ -27,6 +27,15 @@ export interface Subtask {
   completed: boolean
 }
 
+/** A repeating schedule for a task. `null` recurrence = one-time (`scheduledDate`). */
+export interface Recurrence {
+  freq: 'daily' | 'weekly' | 'monthly'
+  /** weekly: days of week, 0=Sun .. 6=Sat. */
+  weekdays?: number[]
+  /** monthly: day of month, 1..31 (clamped to the month's length). */
+  monthday?: number
+}
+
 export interface TaskDTO extends SyncMeta {
   id: string
   listId: string
@@ -41,6 +50,12 @@ export interface TaskDTO extends SyncMeta {
   subtasks: Subtask[]
   /** Manual sort position within the list (ascending). */
   order: number
+  /** Goal this task belongs to as a milestone, or null. (Optional for back-compat.) */
+  goalId?: string | null
+  /** One-time "plan for" date (YYYY-MM-DD) — surfaces in Today on/after this date. */
+  scheduledDate?: string | null
+  /** Repeating schedule — surfaces in Today on each matching date. Null = one-time. */
+  recurrence?: Recurrence | null
 }
 
 export interface DailyTaskDTO extends SyncMeta {
@@ -50,6 +65,8 @@ export interface DailyTaskDTO extends SyncMeta {
   createdAt: string
   /** Manual sort position (ascending). */
   order: number
+  /** Goal this habit is linked to, or null. (Optional for back-compat.) */
+  goalId?: string | null
 }
 
 export interface DailyCompletionDTO extends SyncMeta {
@@ -57,6 +74,45 @@ export interface DailyCompletionDTO extends SyncMeta {
   dailyTaskId: string
   dateKey: string
   createdAt: string
+}
+
+/** Per-occurrence completion of a *repeating* scheduled task (one row per task+date).
+ * One-time scheduled tasks use the task's own `completed` flag instead. */
+export interface ScheduledCompletionDTO extends SyncMeta {
+  id: string
+  taskId: string
+  dateKey: string
+  createdAt: string
+}
+
+export type GoalProgressMode = 'milestones' | 'metric' | 'habits'
+export type GoalStatus = 'active' | 'achieved' | 'archived'
+
+/** A point in a metric goal's progress history. */
+export interface GoalProgressEntry {
+  dateKey: string
+  value: number
+}
+
+export interface GoalDTO extends SyncMeta {
+  id: string
+  title: string
+  /** Motivation / "why". */
+  why: string
+  /** Deadline (YYYY-MM-DD) or null. */
+  targetDate: string | null
+  /** Which signal drives the headline %. */
+  progressMode: GoalProgressMode
+  /** Metric mode: target number, unit, and current value. */
+  targetValue: number | null
+  unit: string | null
+  currentValue: number | null
+  /** Metric mode: history of value updates, for the trend line. */
+  progressLog: GoalProgressEntry[]
+  status: GoalStatus
+  createdAt: string
+  /** Manual sort position (ascending). */
+  order: number
 }
 
 export interface SettingDTO {
@@ -71,6 +127,8 @@ export interface SyncChanges {
   tasks: TaskDTO[]
   dailyTasks: DailyTaskDTO[]
   dailyCompletions: DailyCompletionDTO[]
+  goals: GoalDTO[]
+  scheduledCompletions: ScheduledCompletionDTO[]
   settings: SettingDTO[]
 }
 
@@ -101,5 +159,7 @@ export const EMPTY_CHANGES: SyncChanges = {
   tasks: [],
   dailyTasks: [],
   dailyCompletions: [],
+  goals: [],
+  scheduledCompletions: [],
   settings: [],
 }
