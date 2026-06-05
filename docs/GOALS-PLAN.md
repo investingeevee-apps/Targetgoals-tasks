@@ -122,28 +122,49 @@ setProgress, achieveGoal, archiveGoal, reorderGoals) and selectors that compute 
 goal's progress, streak, and on-track status. Shared `@targetgoals/shared` gets the
 `GoalDTO` type + pure progress/pace helpers (with unit tests).
 
-## 6. Phasing
+## 6. Decisions (locked)
 
-**Phase G1 — MVP (milestones + habits)**
-- `GoalDTO` (no metric yet), `goalId` on tasks/habits, server migration + sync.
-- Goals section in Overview (list + % from milestones), goal detail, create + break-down
-  flow with templates, goal chips in Daily/Tasks, achieved celebration + Achieved list.
-- Web + mobile + server. Ships via OTA (mobile) / reload (web) — except the server needs
-  a restart and the new `goalId` columns migrate automatically.
+1. **Progress model: full hybrid in v1** — every goal supports milestones, linked habits,
+   AND an optional measurable target, with on-track/ETA. A goal's `progressMode` picks
+   which drives the headline %; the others show as supporting signals.
+2. **Navigation: dedicated Goals tab + an Overview summary** — a `Goals` tab holds the
+   full list + detail + create flow; the Overview shows a compact goals-progress summary.
+3. **Milestones = tasks with `goalId`** — reuse the task model (and its subtasks, due
+   dates, reorder) rather than a separate milestone type. Linked habits = `DailyTaskDTO`
+   with `goalId`.
 
-**Phase G2 — Metric goals & pace**
-- Numeric targets, "+ update progress", projected finish + on-track chip, progress trend.
+## 7. Build order (vertical slices, each verifiable)
 
-**Phase G3 — Insight & polish**
-- Weekly review, stall nudges, deadline reminders, "today by goal" grouping, richer
-  templates, sub-goals (optional).
+**Slice 1 — Data layer (foundation)**
+- `packages/shared`: `GoalDTO` + `goalId?` on `TaskDTO`/`DailyTaskDTO` + embedded
+  `progressLog?: {dateKey,value}[]`; add `goals` to `SyncChanges`; new `goals.ts` with
+  pure `computeGoalProgress` / `paceStatus` / `projectedFinish` + **unit tests**.
+- `apps/server`: `goals` table (+ `progress_log` JSON) and `goal_id` columns on
+  `tasks`/`daily_tasks` via `addColumnIfMissing`; goals join `/api/sync`. Restart + verify
+  a goal round-trips.
 
-## 7. Open decisions (confirm before building)
+**Slice 2 — Stores + progress engine (web + mobile)**
+- `goals` array; actions: addGoal, updateGoal, deleteGoal (tombstone), achieveGoal,
+  archiveGoal, reorderGoals, setGoalProgress, addMilestone (task w/ goalId),
+  linkHabit/unlink; selectors using the shared helpers. Fold goals into
+  collectDirty/applyServerChanges/markSynced/mergeById. persist migrate bump
+  (web v4 / mobile v2) backfilling `goals: []` + `goalId: null` + `progressLog`.
 
-1. **v1 progress model** — milestones+habits only, or include metric/number goals from the
-   start? (Drives scope.)
-2. **Where Goals live** — a dedicated **Goals tab**, a section **inside Overview**, or
-   **promote a list** into a goal? (The brand suggests a dedicated tab; the user asked for
-   Overview progress — these can combine: a Goals tab *and* a progress summary in Overview.)
-3. **Milestones vs reusing tasks** — model milestones as tasks-with-`goalId` (reuse
-   everything) vs a separate lightweight milestone type. (Reuse is faster and consistent.)
+**Slice 3 — Web UI**
+- `Goals` tab + `GoalsScreen` (cards: ring/%, countdown, on-track chip, habit streak).
+- `GoalDetail` (ring, milestones checklist, linked habits, metric "+ update progress" +
+  trend, why, achieve/archive). Create flow (mode pick → break-down → templates).
+- Overview **Goals summary** section; goal **chips** on task/daily rows; goal-achieved
+  **celebration**; Achieved shelf.
+
+**Slice 4 — Mobile UI (mirror)**
+- New `goals` screen + tab (`App.tsx` TABS, `MobileScreen`), `GoalsScreen`,
+  `GoalDetailModal`, create flow, Overview summary, goal chips, celebration. Typecheck +
+  bundle.
+
+**Slice 5 — Polish, ship**
+- Starter **templates**, on-track/ETA copy, README + store-listing feature mention.
+- Deploy: server restart + web reload; mobile via `eas update` (JS only).
+
+**Later (G3) — Insights:** weekly review, stall nudges, deadline reminders, "today by
+goal" grouping, sub-goals.
