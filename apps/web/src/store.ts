@@ -4,8 +4,12 @@ import type {
   Celebration,
   DailyCompletionDTO,
   DailyTaskDTO,
+  GoalDTO,
+  GoalProgressMode,
   ID,
   ListDTO,
+  Recurrence,
+  ScheduledCompletionDTO,
   Screen,
   SyncChanges,
   TaskDTO,
@@ -48,6 +52,8 @@ interface State {
   tasks: TaskDTO[]
   dailyTasks: DailyTaskDTO[]
   dailyCompletions: DailyCompletionDTO[]
+  goals: GoalDTO[]
+  scheduledCompletions: ScheduledCompletionDTO[]
 
   // sync bookkeeping
   dirty: Record<string, true>
@@ -96,6 +102,36 @@ interface State {
   toggleDailyToday: (id: ID) => void
   reorderDailyTasks: (orderedIds: ID[]) => void
 
+  // ---- goals ----
+  addGoal: (input: {
+    title: string
+    why?: string
+    targetDate?: string | null
+    progressMode?: GoalProgressMode
+    targetValue?: number | null
+    unit?: string | null
+  }) => string
+  updateGoal: (
+    id: ID,
+    patch: Partial<
+      Pick<GoalDTO, 'title' | 'why' | 'targetDate' | 'progressMode' | 'targetValue' | 'unit'>
+    >,
+  ) => void
+  setGoalProgress: (id: ID, value: number) => void
+  achieveGoal: (id: ID) => void
+  archiveGoal: (id: ID) => void
+  reopenGoal: (id: ID) => void
+  deleteGoal: (id: ID) => void
+  reorderGoals: (orderedIds: ID[]) => void
+  addMilestone: (goalId: ID, listId: ID, title: string) => void
+  linkTaskToGoal: (taskId: ID, goalId: ID | null) => void
+  linkHabitToGoal: (habitId: ID, goalId: ID | null) => void
+
+  // ---- scheduling tasks into Today ----
+  scheduleTask: (taskId: ID, date: string | null) => void
+  setTaskRecurrence: (taskId: ID, rule: Recurrence | null) => void
+  toggleScheduledToday: (taskId: ID, dateKey?: string) => void
+
   // ---- sync integration (called by the sync engine) ----
   collectDirty: () => { changes: Partial<SyncChanges>; synced: DirtySnapshot }
   applyServerChanges: (changes: Partial<SyncChanges>) => void
@@ -117,6 +153,8 @@ export const useStore = create<State>()(
 
       return {
         ...initial,
+        goals: [],
+        scheduledCompletions: [],
         screen: 'tasks',
         currentListId: initial.lists.find((l) => !l.deleted)?.id ?? null,
         selectedTaskId: null,
@@ -487,6 +525,214 @@ export const useStore = create<State>()(
             return { dailyTasks, dirty }
           }),
 
+        // ---- goals ----
+        addGoal: (input) => {
+          const id = uid()
+          const t = nowMs()
+          const today = todayKey()
+          const metric = input.progressMode === 'metric'
+          set((s) => ({
+            goals: [
+              ...s.goals,
+              {
+                id,
+                title: input.title.trim(),
+                why: input.why?.trim() ?? '',
+                targetDate: input.targetDate ?? null,
+                progressMode: input.progressMode ?? 'milestones',
+                targetValue: input.targetValue ?? null,
+                unit: input.unit ?? null,
+                currentValue: metric ? 0 : null,
+                progressLog: metric ? [{ dateKey: today, value: 0 }] : [],
+                status: 'active',
+                createdAt: nowIso(),
+                updatedAt: t,
+                deleted: false,
+                order: Math.max(0, ...s.goals.filter((g) => !g.deleted).map((g) => g.order + 1)),
+              },
+            ],
+            dirty: dirtyWith(s, 'goal', id),
+          }))
+          return id
+        },
+        updateGoal: (id, patch) =>
+          set((s) => ({
+            goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch, updatedAt: nowMs() } : g)),
+            dirty: dirtyWith(s, 'goal', id),
+          })),
+        setGoalProgress: (id, value) =>
+          set((s) => {
+            const today = todayKey()
+            return {
+              goals: s.goals.map((g) => {
+                if (g.id !== id) return g
+                const log = [
+                  ...(g.progressLog ?? []).filter((e) => e.dateKey !== today),
+                  { dateKey: today, value },
+                ].sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+                return { ...g, currentValue: value, progressLog: log, updatedAt: nowMs() }
+              }),
+              dirty: dirtyWith(s, 'goal', id),
+            }
+          }),
+        achieveGoal: (id) =>
+          set((s) => ({
+            goals: s.goals.map((g) =>
+              g.id === id ? { ...g, status: 'achieved', updatedAt: nowMs() } : g,
+            ),
+            dirty: dirtyWith(s, 'goal', id),
+          })),
+        archiveGoal: (id) =>
+          set((s) => ({
+            goals: s.goals.map((g) =>
+              g.id === id ? { ...g, status: 'archived', updatedAt: nowMs() } : g,
+            ),
+            dirty: dirtyWith(s, 'goal', id),
+          })),
+        reopenGoal: (id) =>
+          set((s) => ({
+            goals: s.goals.map((g) =>
+              g.id === id ? { ...g, status: 'active', updatedAt: nowMs() } : g,
+            ),
+            dirty: dirtyWith(s, 'goal', id),
+          })),
+        deleteGoal: (id) =>
+          set((s) => {
+            const t = nowMs()
+            const dirty = { ...s.dirty, [`goal:${id}`]: true as const }
+            // detach (don't delete) linked milestones + habits
+            const tasks = s.tasks.map((task) => {
+              if (task.goalId !== id) return task
+              dirty[`task:${task.id}`] = true
+              return { ...task, goalId: null, updatedAt: t }
+            })
+            const dailyTasks = s.dailyTasks.map((d) => {
+              if (d.goalId !== id) return d
+              dirty[`dailyTask:${d.id}`] = true
+              return { ...d, goalId: null, updatedAt: t }
+            })
+            const goals = s.goals.map((g) =>
+              g.id === id ? { ...g, deleted: true, updatedAt: t } : g,
+            )
+            return { goals, tasks, dailyTasks, dirty }
+          }),
+        reorderGoals: (orderedIds) =>
+          set((s) => {
+            const pos = new Map(orderedIds.map((id, i) => [id, i]))
+            const now = nowMs()
+            const dirty = { ...s.dirty }
+            const goals = s.goals.map((g) => {
+              const next = pos.get(g.id)
+              if (next !== undefined && g.order !== next) {
+                dirty[`goal:${g.id}`] = true
+                return { ...g, order: next, updatedAt: now }
+              }
+              return g
+            })
+            return { goals, dirty }
+          }),
+        addMilestone: (goalId, listId, title) => {
+          const trimmed = title.trim()
+          if (!trimmed) return
+          const id = uid()
+          set((s) => ({
+            tasks: [
+              ...s.tasks,
+              {
+                id,
+                listId,
+                title: trimmed,
+                notes: '',
+                due: null,
+                starred: false,
+                completed: false,
+                completedAt: null,
+                createdAt: nowIso(),
+                updatedAt: nowMs(),
+                deleted: false,
+                subtasks: [],
+                order: 0,
+                goalId,
+                scheduledDate: null,
+                recurrence: null,
+              },
+            ],
+            dirty: dirtyWith(s, 'task', id),
+          }))
+        },
+        linkTaskToGoal: (taskId, goalId) =>
+          set((s) => ({
+            tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, goalId, updatedAt: nowMs() } : t)),
+            dirty: dirtyWith(s, 'task', taskId),
+          })),
+        linkHabitToGoal: (habitId, goalId) =>
+          set((s) => ({
+            dailyTasks: s.dailyTasks.map((d) =>
+              d.id === habitId ? { ...d, goalId, updatedAt: nowMs() } : d,
+            ),
+            dirty: dirtyWith(s, 'dailyTask', habitId),
+          })),
+
+        // ---- scheduling tasks into Today ----
+        scheduleTask: (taskId, date) =>
+          set((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId ? { ...t, scheduledDate: date, updatedAt: nowMs() } : t,
+            ),
+            dirty: dirtyWith(s, 'task', taskId),
+          })),
+        setTaskRecurrence: (taskId, rule) =>
+          set((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId ? { ...t, recurrence: rule, updatedAt: nowMs() } : t,
+            ),
+            dirty: dirtyWith(s, 'task', taskId),
+          })),
+        toggleScheduledToday: (taskId, dateKey) =>
+          set((s) => {
+            const key = dateKey ?? todayKey()
+            const task = s.tasks.find((t) => t.id === taskId)
+            if (!task) return {}
+            // repeating task → per-occurrence completion record
+            if (task.recurrence) {
+              const existing = s.scheduledCompletions.find(
+                (c) => c.taskId === taskId && c.dateKey === key,
+              )
+              if (existing) {
+                return {
+                  scheduledCompletions: s.scheduledCompletions.map((c) =>
+                    c.id === existing.id
+                      ? { ...c, deleted: !existing.deleted, updatedAt: nowMs() }
+                      : c,
+                  ),
+                  dirty: { ...s.dirty, [`schedCompletion:${existing.id}`]: true },
+                }
+              }
+              const id = uid()
+              return {
+                scheduledCompletions: [
+                  ...s.scheduledCompletions,
+                  { id, taskId, dateKey: key, createdAt: nowIso(), updatedAt: nowMs(), deleted: false },
+                ],
+                dirty: { ...s.dirty, [`schedCompletion:${id}`]: true },
+              }
+            }
+            // one-time scheduled task → complete the underlying task
+            return {
+              tasks: s.tasks.map((t) =>
+                t.id === taskId
+                  ? {
+                      ...t,
+                      completed: !t.completed,
+                      completedAt: !t.completed ? nowIso() : null,
+                      updatedAt: nowMs(),
+                    }
+                  : t,
+              ),
+              dirty: dirtyWith(s, 'task', taskId),
+            }
+          }),
+
         // ---- sync integration ----
         collectDirty: () => {
           const s = get()
@@ -495,6 +741,8 @@ export const useStore = create<State>()(
             tasks: [],
             dailyTasks: [],
             dailyCompletions: [],
+            goals: [],
+            scheduledCompletions: [],
           }
           const synced: DirtySnapshot = []
           for (const key of Object.keys(s.dirty)) {
@@ -518,6 +766,14 @@ export const useStore = create<State>()(
               const r = s.dailyCompletions.find((x) => x.id === id)
               if (r) changes.dailyCompletions!.push(r)
               row = r
+            } else if (kind === 'goal') {
+              const r = s.goals.find((x) => x.id === id)
+              if (r) changes.goals!.push(r)
+              row = r
+            } else if (kind === 'schedCompletion') {
+              const r = s.scheduledCompletions.find((x) => x.id === id)
+              if (r) changes.scheduledCompletions!.push(r)
+              row = r
             }
             // -1 sentinel = no row found; markSynced will clear it (nothing to keep).
             synced.push({ key, updatedAt: row?.updatedAt ?? -1 })
@@ -538,6 +794,11 @@ export const useStore = create<State>()(
                 s.dailyCompletions,
                 fresh('completion', changes.dailyCompletions),
               ),
+              goals: mergeById(s.goals, fresh('goal', changes.goals)),
+              scheduledCompletions: mergeById(
+                s.scheduledCompletions,
+                fresh('schedCompletion', changes.scheduledCompletions),
+              ),
             }
           }),
         markSynced: (serverNow, synced) =>
@@ -556,7 +817,11 @@ export const useStore = create<State>()(
                       ? s.dailyTasks
                       : kind === 'completion'
                         ? s.dailyCompletions
-                        : undefined
+                        : kind === 'goal'
+                          ? s.goals
+                          : kind === 'schedCompletion'
+                            ? s.scheduledCompletions
+                            : undefined
               const row = arr?.find((r) => r.id === id)
               // Clear only if the row is gone or hasn't been re-edited since we
               // collected it. A row edited mid-flight stays dirty for next sync.
@@ -609,26 +874,40 @@ export const useStore = create<State>()(
     },
     {
       name: STORE_KEY,
-      version: 3,
-      // Backfill fields added after a user's data was first saved (subtasks/order).
+      version: 4,
+      // Backfill fields added after a user's data was first saved (subtasks/order;
+      // goals + scheduledCompletions arrays).
       migrate: (state: unknown) => {
         // Guard a nullish/corrupt persisted value so we fall back cleanly instead
         // of crashing rehydration.
         if (!state || typeof state !== 'object') return state as never
-        const s = state as { tasks?: TaskDTO[]; dailyTasks?: DailyTaskDTO[] }
+        const s = state as {
+          tasks?: TaskDTO[]
+          dailyTasks?: DailyTaskDTO[]
+          goals?: GoalDTO[]
+          scheduledCompletions?: ScheduledCompletionDTO[]
+        }
         const tasks = Array.isArray(s.tasks)
           ? s.tasks.map((t, i) => ({ ...t, subtasks: t.subtasks ?? [], order: t.order ?? i }))
           : s.tasks
         const dailyTasks = Array.isArray(s.dailyTasks)
           ? s.dailyTasks.map((d, i) => ({ ...d, order: d.order ?? i }))
           : s.dailyTasks
-        return { ...s, tasks, dailyTasks } as never
+        return {
+          ...s,
+          tasks,
+          dailyTasks,
+          goals: Array.isArray(s.goals) ? s.goals : [],
+          scheduledCompletions: Array.isArray(s.scheduledCompletions) ? s.scheduledCompletions : [],
+        } as never
       },
       partialize: (s) => ({
         lists: s.lists,
         tasks: s.tasks,
         dailyTasks: s.dailyTasks,
         dailyCompletions: s.dailyCompletions,
+        goals: s.goals,
+        scheduledCompletions: s.scheduledCompletions,
         dirty: s.dirty,
         lastSyncedAt: s.lastSyncedAt,
         screen: s.screen,
