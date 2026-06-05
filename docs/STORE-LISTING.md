@@ -11,44 +11,53 @@ Copy/paste content for the Play Console store listing. Tweak to taste.
 
 ## Short description (max 80 chars)
 ```
-Tasks and daily habits with streaks — private, offline, no account needed.
+Break big goals into daily tasks. Build streaks. Reach your targets.
 ```
+Alternative (73): `Break your goals into daily tasks and habits. Build streaks, hit targets.`
 
 ## Full description (max 4000 chars)
 ```
-TargetGoals Tasks is a clean, private to‑do and habit tracker that works completely
-offline. Plan your day with lists, tasks, and subtasks, build daily habits, and watch
-your streak grow — all stored on your device, with no account and no sign‑up.
+Big goals aren't reached in a day — they're reached by what you do EACH day.
+TargetGoals Tasks helps you break your goals down into clear daily tasks and habits,
+then keep showing up until you get there.
 
-WHY TARGETGOALS
-• Private by design — your data lives on your phone. No account, no ads, no trackers.
-• Works fully offline — open it anywhere, anytime.
-• Simple and fast — focused on getting things done, not on getting in your way.
+Training for a race, learning a skill, building a business, or just trying to stay on
+top of life? TargetGoals turns "someday" into a simple list for today.
 
-TASKS
-• Multiple lists for work, home, errands, and projects.
-• Tasks with notes, due dates, and stars.
-• Subtasks shown inline as an expandable checklist.
-• Reorder tasks and subtasks to match your priorities.
+BREAK YOUR GOALS INTO DAILY ACTIONS
+• Create a list for each goal and break it into bite-size tasks.
+• Add notes, due dates, and subtasks so every step is clear.
+• Reorder tasks to focus on what matters next.
 
-DAILY HABITS & STREAKS
-• Track recurring daily habits that reset each day.
-• Keep your streak alive — see your current and longest streaks.
-• An Overview with a completion heatmap and your history at a glance.
-• Optional reminders: a daily nudge and a “streak at risk” warning — fully opt‑in.
+BUILD DAILY MOMENTUM
+• Set recurring daily habits that move you toward your goals.
+• Check them off each day — the list resets every morning, so you always know what's
+  next without losing your history.
+• Keep your streak alive and watch it grow.
 
-BACK UP YOUR DATA
+SEE YOUR PROGRESS
+• An Overview dashboard shows your current and longest streaks, active days, and best day.
+• A contribution-style heatmap turns your consistency into a picture.
+• Celebrate the wins — a little pop when you log your first habit of the day, and a
+  bigger one when you complete them all.
+
+STAY ON TRACK
+• Optional daily reminders and a "streak at risk" nudge — fully opt-in.
+• A home-screen widget shows today's habits, progress, and streak at a glance.
+
+PRIVATE BY DESIGN
+• Your data lives on your device. No account, no sign-up, no ads, no trackers.
+• Works completely offline.
 • Export a backup any time and restore it on a new phone.
 
-OPTIONAL SYNC (ADVANCED)
-• Power users can run their own self‑hosted server and sync across their devices.
-• Sync is completely optional — the app is great on its own, and your data is only
-  ever sent to a server you control.
+SYNC ACROSS DEVICES (OPTIONAL)
+• Power users can run their own self-hosted server and sync across their devices.
+• Sync is optional and private — your data is only ever sent to a server you control.
 
 OPEN SOURCE
 • TargetGoals Tasks is open source.
 
-No account. No cloud lock‑in. Just your goals, on your device.
+Set your target. Break it down. Show up daily. Reach it.
 ```
 
 ## Graphics (in `store-assets/`)
