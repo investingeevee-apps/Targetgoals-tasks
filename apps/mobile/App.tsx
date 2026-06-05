@@ -17,7 +17,7 @@ import { colors } from './src/theme'
 
 const TABS: { key: MobileScreen; label: string; icon: string }[] = [
   { key: 'tasks', label: 'Tasks', icon: '✓' },
-  { key: 'daily', label: 'Daily', icon: '🔁' },
+  { key: 'daily', label: 'Today', icon: '📅' },
   { key: 'overview', label: 'Overview', icon: '📊' },
   { key: 'settings', label: 'Settings', icon: '⚙️' },
 ]

@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native'
-import { computeStreaks, formatLongDate, todayKey } from '@targetgoals/shared'
+import {
+  computeStreaks,
+  formatLongDate,
+  recurrenceLabel,
+  todayAgenda,
+  todayKey,
+} from '@targetgoals/shared'
 import { useStore } from '../store'
 import { buildDailyLog } from '../lib/transform'
 import { colors } from '../theme'
@@ -13,6 +19,15 @@ export function DailyScreen() {
   const renameDailyTask = useStore((s) => s.renameDailyTask)
   const toggleDailyToday = useStore((s) => s.toggleDailyToday)
   const reorderDailyTasks = useStore((s) => s.reorderDailyTasks)
+
+  const allTasks = useStore((s) => s.tasks)
+  const scheduledCompletions = useStore((s) => s.scheduledCompletions)
+  const lists = useStore((s) => s.lists)
+  const toggleScheduledToday = useStore((s) => s.toggleScheduledToday)
+  const scheduleTask = useStore((s) => s.scheduleTask)
+  const setScreen = useStore((s) => s.setScreen)
+  const selectTask = useStore((s) => s.selectTask)
+  const selectList = useStore((s) => s.selectList)
 
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -50,11 +65,26 @@ export function DailyScreen() {
     [allDailyTasks, completions],
   )
 
+  const agenda = useMemo(
+    () => todayAgenda(allTasks, scheduledCompletions, key),
+    [allTasks, scheduledCompletions, key],
+  )
+  const listName = useMemo(() => {
+    const m = new Map(lists.map((l) => [l.id, l.name]))
+    return (id: string) => m.get(id) ?? 'Tasks'
+  }, [lists])
+
+  function openTask(listId: string, taskId: string) {
+    selectList(listId)
+    setScreen('tasks')
+    selectTask(taskId)
+  }
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.h1}>Daily tasks</Text>
+          <Text style={styles.h1}>Today</Text>
           <Text style={styles.subtle}>{formatLongDate(key)}</Text>
         </View>
         <View style={styles.streak}>
@@ -63,7 +93,7 @@ export function DailyScreen() {
       </View>
 
       <View style={styles.progressLabelRow}>
-        <Text style={styles.subtle}>Today's progress</Text>
+        <Text style={styles.subtle}>Today's habits</Text>
         <Text style={styles.subtle}>
           {completedCount} of {active.length} done
         </Text>
@@ -71,6 +101,38 @@ export function DailyScreen() {
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${pct}%` }]} />
       </View>
+
+      {agenda.length > 0 && (
+        <View>
+          <Text style={styles.sectionTitle}>Scheduled for today</Text>
+          {agenda.map(({ task, repeating, overdue, done }) => (
+            <View key={task.id} style={styles.schedRow}>
+              <Pressable onPress={() => toggleScheduledToday(task.id, key)} hitSlop={8}>
+                <View style={[styles.check, done && styles.checkDone]}>
+                  {done && <Text style={styles.checkMark}>✓</Text>}
+                </View>
+              </Pressable>
+              <Pressable style={styles.schedMain} onPress={() => openTask(task.listId, task.id)}>
+                <Text style={[styles.taskTitle, done && styles.taskTitleDone]} numberOfLines={1}>
+                  {task.title}
+                </Text>
+                <Text style={styles.schedMeta} numberOfLines={1}>
+                  {overdue ? '⚠ Overdue · ' : ''}
+                  {repeating ? `🔁 ${recurrenceLabel(task.recurrence)} · ` : ''}
+                  {listName(task.listId)}
+                </Text>
+              </Pressable>
+              {!repeating && (
+                <Pressable onPress={() => scheduleTask(task.id, null)} hitSlop={8} style={styles.rowAction}>
+                  <Text style={styles.trash}>🗑</Text>
+                </Pressable>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+
+      <Text style={styles.sectionTitle}>Habits</Text>
 
       <View style={styles.addRow}>
         <Text style={styles.addPlus}>＋</Text>
@@ -177,6 +239,13 @@ const styles = StyleSheet.create({
   addPlus: { color: colors.accent, fontSize: 18, fontWeight: '700' },
   addInput: { flex: 1, color: colors.text, fontSize: 15, paddingVertical: 4 },
   empty: { color: colors.textFaint, textAlign: 'center', marginTop: 40 },
+  sectionTitle: {
+    color: colors.textFaint, fontSize: 11, fontWeight: '700',
+    textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 22, marginBottom: 4,
+  },
+  schedRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  schedMain: { flex: 1 },
+  schedMeta: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
   taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
   moveCol: { justifyContent: 'center' },
   moveBtn: { color: colors.textFaint, fontSize: 11, lineHeight: 14 },

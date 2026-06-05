@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
-import { addDays, formatDue, todayKey } from '@targetgoals/shared'
+import { addDays, formatDue, fromKey, todayKey } from '@targetgoals/shared'
 import { useStore } from '../store'
 import { colors } from '../theme'
 
@@ -10,6 +10,15 @@ const DUE_PRESETS: { label: string; value: string | null }[] = [
   { label: 'Tomorrow', value: addDays(todayKey(), 1) },
   { label: 'Next week', value: addDays(todayKey(), 7) },
 ]
+
+type SchedFreq = 'off' | 'daily' | 'weekly' | 'monthly'
+const SCHED_FREQS: { key: SchedFreq; label: string }[] = [
+  { key: 'off', label: 'One-time' },
+  { key: 'daily', label: 'Daily' },
+  { key: 'weekly', label: 'Weekly' },
+  { key: 'monthly', label: 'Monthly' },
+]
+const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 export function TaskDetailModal() {
   const screen = useStore((s) => s.screen)
@@ -23,6 +32,8 @@ export function TaskDetailModal() {
   const renameSubtask = useStore((s) => s.renameSubtask)
   const deleteSubtask = useStore((s) => s.deleteSubtask)
   const reorderSubtasks = useStore((s) => s.reorderSubtasks)
+  const scheduleTask = useStore((s) => s.scheduleTask)
+  const setTaskRecurrence = useStore((s) => s.setTaskRecurrence)
 
   const [subDraft, setSubDraft] = useState('')
   // Edit title/notes locally and commit on blur (avoids per-keystroke store
@@ -48,6 +59,32 @@ export function TaskDetailModal() {
     if (j < 0 || j >= ids.length) return
     ;[ids[i], ids[j]] = [ids[j], ids[i]]
     reorderSubtasks(tid, ids)
+  }
+
+  const rule = task.recurrence ?? null
+  const freq: SchedFreq = rule?.freq ?? 'off'
+  const todayDow = fromKey(todayKey()).getDay()
+  const todayDom = fromKey(todayKey()).getDate()
+  function setFreq(f: SchedFreq) {
+    if (f === 'off') {
+      setTaskRecurrence(tid, null)
+      return
+    }
+    if (task!.scheduledDate) scheduleTask(tid, null)
+    if (f === 'daily') setTaskRecurrence(tid, { freq: 'daily' })
+    else if (f === 'weekly')
+      setTaskRecurrence(tid, {
+        freq: 'weekly',
+        weekdays: rule?.weekdays?.length ? rule.weekdays : [todayDow],
+      })
+    else setTaskRecurrence(tid, { freq: 'monthly', monthday: rule?.monthday ?? todayDom })
+  }
+  function toggleWeekday(d: number) {
+    const cur = new Set(rule?.weekdays ?? [])
+    if (cur.has(d)) cur.delete(d)
+    else cur.add(d)
+    const weekdays = [...cur].sort((a, b) => a - b)
+    setTaskRecurrence(tid, { freq: 'weekly', weekdays: weekdays.length ? weekdays : [todayDow] })
   }
 
   return (
@@ -157,6 +194,76 @@ export function TaskDetailModal() {
               autoCapitalize="none"
             />
 
+            <Text style={styles.label}>Add to Today</Text>
+            <View style={styles.chipRow}>
+              {SCHED_FREQS.map((f) => {
+                const active = freq === f.key
+                return (
+                  <Pressable
+                    key={f.key}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => setFreq(f.key)}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{f.label}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+
+            {freq === 'off' && (
+              <View style={styles.chipRow}>
+                {[
+                  { label: 'None', value: null },
+                  { label: 'Today', value: todayKey() },
+                  { label: 'Tomorrow', value: addDays(todayKey(), 1) },
+                ].map((p) => {
+                  const active = (task.scheduledDate ?? null) === p.value
+                  return (
+                    <Pressable
+                      key={p.label}
+                      style={[styles.chip, active && styles.chipActive]}
+                      onPress={() => scheduleTask(tid, p.value)}
+                    >
+                      <Text style={[styles.chipText, active && styles.chipTextActive]}>{p.label}</Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            )}
+
+            {freq === 'weekly' && (
+              <View style={styles.weekRow}>
+                {WEEKDAY_LETTERS.map((w, i) => {
+                  const on = (rule?.weekdays ?? []).includes(i)
+                  return (
+                    <Pressable
+                      key={i}
+                      style={[styles.dayBtn, on && styles.dayBtnOn]}
+                      onPress={() => toggleWeekday(i)}
+                    >
+                      <Text style={[styles.dayTxt, on && styles.dayTxtOn]}>{w}</Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            )}
+
+            {freq === 'monthly' && (
+              <View style={styles.monthRow}>
+                <Text style={styles.subtle2}>On day</Text>
+                <TextInput
+                  style={styles.monthInput}
+                  keyboardType="number-pad"
+                  value={String(rule?.monthday ?? 1)}
+                  onChangeText={(v) => {
+                    const n = Math.min(31, Math.max(1, Number(v) || 1))
+                    setTaskRecurrence(tid, { freq: 'monthly', monthday: n })
+                  }}
+                />
+                <Text style={styles.subtle2}>of each month</Text>
+              </View>
+            )}
+
             <Pressable
               style={[styles.starBtn, task.starred && styles.starBtnActive]}
               onPress={() => toggleStar(task.id)}
@@ -217,6 +324,20 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
   chipText: { color: colors.textDim, fontSize: 13 },
   chipTextActive: { color: '#fff', fontWeight: '700' },
+  weekRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  dayBtn: {
+    width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  dayBtnOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  dayTxt: { color: colors.textDim, fontSize: 13, fontWeight: '700' },
+  dayTxtOn: { color: '#fff' },
+  monthRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  monthInput: {
+    width: 56, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg,
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, color: colors.text, textAlign: 'center',
+  },
+  subtle2: { color: colors.textDim, fontSize: 13 },
   starBtn: {
     marginTop: 20, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 12, alignItems: 'center',
   },
