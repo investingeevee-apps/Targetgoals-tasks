@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
-import { ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import {
   buildHeatmap,
+  computeGoalProgress,
   computeStats,
   computeStreaks,
   formatLongDate,
@@ -10,6 +11,50 @@ import {
 import { useStore } from '../store'
 import { buildDailyLog } from '../lib/transform'
 import { colors, heatLevels } from '../theme'
+
+function GoalsOverview() {
+  const goals = useStore((s) => s.goals)
+  const tasks = useStore((s) => s.tasks)
+  const dailyTasks = useStore((s) => s.dailyTasks)
+  const completions = useStore((s) => s.dailyCompletions)
+  const selectGoal = useStore((s) => s.selectGoal)
+
+  const active = useMemo(
+    () =>
+      goals
+        .filter((g) => !g.deleted && g.status !== 'archived')
+        .sort(
+          (a, b) =>
+            (a.status === 'achieved' ? 1 : 0) - (b.status === 'achieved' ? 1 : 0) || a.order - b.order,
+        ),
+    [goals],
+  )
+  if (active.length === 0) return null
+
+  return (
+    <View style={styles.goalsCard}>
+      <Text style={styles.heatTitle}>Goals</Text>
+      {active.map((g) => {
+        const milestones = tasks.filter((t) => t.goalId === g.id && !t.deleted)
+        const habits = dailyTasks.filter((d) => d.goalId === g.id && !d.deleted && !d.archived)
+        const p = computeGoalProgress(g, milestones, habits, completions)
+        return (
+          <Pressable key={g.id} style={styles.goalRow} onPress={() => selectGoal(g.id)}>
+            <View style={styles.goalRowTop}>
+              <Text style={styles.goalRowTitle} numberOfLines={1}>
+                {g.title}
+              </Text>
+              <Text style={styles.goalRowPct}>{p.percent}%</Text>
+            </View>
+            <View style={styles.goalBarTrack}>
+              <View style={[styles.goalBarFill, { width: `${p.percent}%` }]} />
+            </View>
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+}
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -63,6 +108,8 @@ export function OverviewScreen() {
         />
       </View>
 
+      <GoalsOverview />
+
       <View style={styles.heatCard}>
         <Text style={styles.heatTitle}>Completion activity</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -111,6 +158,16 @@ const styles = StyleSheet.create({
   cardLabel: { color: colors.textFaint, fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
   cardValue: { color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 2 },
   cardHint: { color: colors.textFaint, fontSize: 11, marginTop: 2 },
+  goalsCard: {
+    marginTop: 18, borderWidth: 1, borderColor: colors.border,
+    backgroundColor: colors.surface, borderRadius: 16, padding: 16,
+  },
+  goalRow: { marginTop: 12 },
+  goalRowTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  goalRowTitle: { color: colors.text, fontSize: 14, flex: 1, marginRight: 8 },
+  goalRowPct: { color: colors.textDim, fontSize: 12, fontWeight: '700' },
+  goalBarTrack: { height: 7, borderRadius: 999, backgroundColor: colors.surfaceAlt, overflow: 'hidden' },
+  goalBarFill: { height: 7, borderRadius: 999, backgroundColor: colors.accent },
   heatCard: {
     marginTop: 18, borderWidth: 1, borderColor: colors.border,
     backgroundColor: colors.surface, borderRadius: 16, padding: 16,

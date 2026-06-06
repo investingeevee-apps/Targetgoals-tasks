@@ -9,31 +9,38 @@ export function Celebration() {
 
   useEffect(() => {
     if (!celebration) return
-    const ms = celebration.kind === 'allDone' ? 4200 : 3200
-    const timer = setTimeout(dismiss, ms)
+    const big = celebration.kind === 'allDone' || celebration.kind === 'goal'
+    const timer = setTimeout(dismiss, big ? 4200 : 3200)
     return () => clearTimeout(timer)
   }, [celebration, dismiss])
 
   if (!celebration) return null
   const allDone = celebration.kind === 'allDone'
+  const goal = celebration.kind === 'goal'
   const streakLabel = `${celebration.streak} day${celebration.streak === 1 ? '' : 's'}`
 
   return (
     <Modal transparent animationType="fade" visible onRequestClose={dismiss}>
       <Pressable style={styles.backdrop} onPress={dismiss}>
         <View style={styles.card}>
-          <Text style={styles.emoji}>{allDone ? '🎉' : '🔥'}</Text>
-          <Text style={styles.title}>{allDone ? 'Perfect day!' : "You're on a hot streak!"}</Text>
-          <Text style={styles.body}>
-            {allDone
-              ? `All ${celebration.total} daily tasks complete.`
-              : 'First task logged today — keep it going.'}
+          <Text style={styles.emoji}>{goal ? '🏆' : allDone ? '🎉' : '🔥'}</Text>
+          <Text style={styles.title}>
+            {goal ? 'Goal achieved!' : allDone ? 'Perfect day!' : "You're on a hot streak!"}
           </Text>
-          <View style={[styles.chip, { backgroundColor: allDone ? 'rgba(16,185,129,0.15)' : 'rgba(249,115,22,0.15)' }]}>
-            <Text style={[styles.chipText, { color: allDone ? colors.green : colors.orange }]}>
-              🔥 {streakLabel} streak
-            </Text>
-          </View>
+          <Text style={styles.body}>
+            {goal
+              ? `You reached “${celebration.title}”. That's the whole point.`
+              : allDone
+                ? `All ${celebration.total} daily tasks complete.`
+                : 'First task logged today — keep it going.'}
+          </Text>
+          {!goal && (
+            <View style={[styles.chip, { backgroundColor: allDone ? 'rgba(16,185,129,0.15)' : 'rgba(249,115,22,0.15)' }]}>
+              <Text style={[styles.chipText, { color: allDone ? colors.green : colors.orange }]}>
+                🔥 {streakLabel} streak
+              </Text>
+            </View>
+          )}
         </View>
       </Pressable>
     </Modal>

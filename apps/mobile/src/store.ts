@@ -20,7 +20,7 @@ import { seedData, uid } from './lib/transform'
 const nowIso = () => new Date().toISOString()
 const nowMs = () => Date.now()
 
-export type MobileScreen = 'tasks' | 'daily' | 'overview' | 'settings'
+export type MobileScreen = 'tasks' | 'daily' | 'goals' | 'overview' | 'settings'
 
 /** A dirty key plus the row's updatedAt when collected for a push, so we only
  * clear it after sync if it hasn't been edited again in the meantime. */
@@ -51,9 +51,11 @@ interface State {
   screen: MobileScreen
   currentListId: ID | null
   selectedTaskId: ID | null
+  selectedGoalId: ID | null
   celebration: Celebration | null
 
   setScreen: (s: MobileScreen) => void
+  selectGoal: (id: ID | null) => void
   dismissCelebration: () => void
 
   // lists
@@ -139,11 +141,13 @@ export const useStore = create<State>()(
         goals: [],
         scheduledCompletions: [],
         screen: 'daily',
+        selectedGoalId: null,
         currentListId: initial.lists.find((l) => !l.deleted)?.id ?? null,
         selectedTaskId: null,
         celebration: null,
 
-        setScreen: (screen) => set({ screen, selectedTaskId: null }),
+        setScreen: (screen) => set({ screen, selectedTaskId: null, selectedGoalId: null }),
+        selectGoal: (id) => set({ screen: 'goals', selectedGoalId: id }),
         dismissCelebration: () => set({ celebration: null }),
 
         // ---- lists ----
@@ -531,12 +535,16 @@ export const useStore = create<State>()(
             }
           }),
         achieveGoal: (id) =>
-          set((s) => ({
-            goals: s.goals.map((g) =>
-              g.id === id ? { ...g, status: 'achieved', updatedAt: nowMs() } : g,
-            ),
-            dirty: { ...s.dirty, [`goal:${id}`]: true },
-          })),
+          set((s) => {
+            const g = s.goals.find((x) => x.id === id)
+            return {
+              goals: s.goals.map((x) =>
+                x.id === id ? { ...x, status: 'achieved', updatedAt: nowMs() } : x,
+              ),
+              dirty: { ...s.dirty, [`goal:${id}`]: true },
+              celebration: g ? { kind: 'goal', streak: 0, total: 0, title: g.title } : s.celebration,
+            }
+          }),
         archiveGoal: (id) =>
           set((s) => ({
             goals: s.goals.map((g) =>

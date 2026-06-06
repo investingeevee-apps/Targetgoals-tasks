@@ -7,6 +7,7 @@ import { useStore, type MobileScreen } from './src/store'
 import { initSync } from './src/sync/store'
 import { TasksScreen } from './src/screens/TasksScreen'
 import { DailyScreen } from './src/screens/DailyScreen'
+import { GoalsScreen } from './src/screens/GoalsScreen'
 import { OverviewScreen } from './src/screens/OverviewScreen'
 import { SettingsScreen } from './src/screens/SettingsScreen'
 import { Celebration } from './src/components/Celebration'
@@ -18,6 +19,7 @@ import { colors } from './src/theme'
 const TABS: { key: MobileScreen; label: string; icon: string }[] = [
   { key: 'tasks', label: 'Tasks', icon: '✓' },
   { key: 'daily', label: 'Today', icon: '📅' },
+  { key: 'goals', label: 'Goals', icon: '◎' },
   { key: 'overview', label: 'Overview', icon: '📊' },
   { key: 'settings', label: 'Settings', icon: '⚙️' },
 ]
@@ -45,6 +47,7 @@ export default function App() {
         <View style={styles.body}>
           {screen === 'tasks' && <TasksScreen />}
           {screen === 'daily' && <DailyScreen />}
+          {screen === 'goals' && <GoalsScreen />}
           {screen === 'overview' && <OverviewScreen />}
           {screen === 'settings' && <SettingsScreen />}
         </View>
