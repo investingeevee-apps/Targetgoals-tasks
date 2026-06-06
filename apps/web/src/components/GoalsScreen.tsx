@@ -215,7 +215,11 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const completions = useStore((s) => s.dailyCompletions)
   const addMilestone = useStore((s) => s.addMilestone)
   const toggleTask = useStore((s) => s.toggleTask)
+  const updateTask = useStore((s) => s.updateTask)
+  const deleteTask = useStore((s) => s.deleteTask)
   const addDailyTask = useStore((s) => s.addDailyTask)
+  const renameDailyTask = useStore((s) => s.renameDailyTask)
+  const deleteDailyTask = useStore((s) => s.deleteDailyTask)
   const linkHabitToGoal = useStore((s) => s.linkHabitToGoal)
   const toggleDailyToday = useStore((s) => s.toggleDailyToday)
   const setGoalProgress = useStore((s) => s.setGoalProgress)
@@ -227,6 +231,8 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const [msDraft, setMsDraft] = useState('')
   const [habitDraft, setHabitDraft] = useState('')
   const [progressDraft, setProgressDraft] = useState('')
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState('')
 
   const todayStr = todayKey()
   const doneToday = useMemo(() => {
@@ -323,16 +329,52 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
         </h2>
         <div className="space-y-0.5">
           {milestones.map((m) => (
-            <div key={m.id} className="flex items-center gap-2 rounded-lg px-1 py-1.5">
+            <div key={m.id} className="group flex items-center gap-2 rounded-lg px-1 py-1.5 hover:bg-slate-800/40">
               <button
                 className={m.completed ? 'text-accent' : 'text-slate-500 hover:text-slate-300'}
                 onClick={() => toggleTask(m.id)}
               >
                 {m.completed ? <CheckCircle width={18} height={18} /> : <Circle width={18} height={18} />}
               </button>
-              <span className={`text-sm ${m.completed ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
-                {m.title}
-              </span>
+              {editId === m.id ? (
+                <input
+                  autoFocus
+                  value={editDraft}
+                  onChange={(e) => setEditDraft(e.target.value)}
+                  onBlur={() => {
+                    if (editDraft.trim()) updateTask(m.id, { title: editDraft })
+                    setEditId(null)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (editDraft.trim()) updateTask(m.id, { title: editDraft })
+                      setEditId(null)
+                    }
+                    if (e.key === 'Escape') setEditId(null)
+                  }}
+                  className="flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 text-sm text-white outline-none focus:border-accent"
+                />
+              ) : (
+                <button
+                  className={`flex-1 text-left text-sm ${m.completed ? 'text-slate-500 line-through' : 'text-slate-200'}`}
+                  onClick={() => {
+                    setEditId(m.id)
+                    setEditDraft(m.title)
+                  }}
+                  title="Click to rename"
+                >
+                  {m.title}
+                </button>
+              )}
+              {editId !== m.id && (
+                <button
+                  className="text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
+                  onClick={() => deleteTask(m.id)}
+                  title="Delete step"
+                >
+                  <Trash width={14} height={14} />
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -355,16 +397,63 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
           {habits.map((h) => {
             const done = doneToday.has(h.id)
             return (
-              <div key={h.id} className="flex items-center gap-2 rounded-lg px-1 py-1.5">
+              <div key={h.id} className="group flex items-center gap-2 rounded-lg px-1 py-1.5 hover:bg-slate-800/40">
                 <button
                   className={done ? 'text-accent' : 'text-slate-500 hover:text-slate-300'}
                   onClick={() => toggleDailyToday(h.id)}
                 >
                   {done ? <CheckCircle width={18} height={18} /> : <Circle width={18} height={18} />}
                 </button>
-                <span className={`text-sm ${done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
-                  {h.title}
-                </span>
+                {editId === h.id ? (
+                  <input
+                    autoFocus
+                    value={editDraft}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    onBlur={() => {
+                      if (editDraft.trim()) renameDailyTask(h.id, editDraft)
+                      setEditId(null)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (editDraft.trim()) renameDailyTask(h.id, editDraft)
+                        setEditId(null)
+                      }
+                      if (e.key === 'Escape') setEditId(null)
+                    }}
+                    className="flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 text-sm text-white outline-none focus:border-accent"
+                  />
+                ) : (
+                  <button
+                    className={`flex-1 text-left text-sm ${done ? 'text-slate-500 line-through' : 'text-slate-200'}`}
+                    onClick={() => {
+                      setEditId(h.id)
+                      setEditDraft(h.title)
+                    }}
+                    title="Click to rename"
+                  >
+                    {h.title}
+                  </button>
+                )}
+                {editId !== h.id && (
+                  <>
+                    <button
+                      className="text-[11px] text-slate-600 opacity-0 transition hover:text-slate-300 group-hover:opacity-100"
+                      onClick={() => linkHabitToGoal(h.id, null)}
+                      title="Unlink from this goal (keeps the habit)"
+                    >
+                      Unlink
+                    </button>
+                    <button
+                      className="text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
+                      onClick={() => {
+                        if (confirm(`Delete habit "${h.title}" and its history?`)) deleteDailyTask(h.id)
+                      }}
+                      title="Delete habit"
+                    >
+                      <Trash width={14} height={14} />
+                    </button>
+                  </>
+                )}
               </div>
             )
           })}
