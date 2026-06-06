@@ -54,14 +54,16 @@ export function Celebration() {
 
   useEffect(() => {
     if (!celebration) return
-    const ms = celebration.kind === 'allDone' ? 5000 : 3600
-    const timer = setTimeout(dismiss, ms)
+    const big = celebration.kind === 'allDone' || celebration.kind === 'goal'
+    const timer = setTimeout(dismiss, big ? 5000 : 3600)
     return () => clearTimeout(timer)
   }, [celebration, dismiss])
 
   if (!celebration) return null
 
   const allDone = celebration.kind === 'allDone'
+  const goal = celebration.kind === 'goal'
+  const big = allDone || goal
   const streakLabel = `${celebration.streak} day${celebration.streak === 1 ? '' : 's'}`
 
   return (
@@ -69,7 +71,7 @@ export function Celebration() {
       className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm"
       onClick={dismiss}
     >
-      {allDone && <Confetti />}
+      {big && <Confetti />}
 
       <div
         className="animate-pop-in relative mx-4 w-full max-w-sm rounded-3xl border border-white/10 bg-slate-900 p-8 text-center shadow-2xl"
@@ -78,12 +80,14 @@ export function Celebration() {
         {/* glow */}
         <div
           className={`absolute inset-x-0 -top-px mx-auto h-24 w-3/4 rounded-full blur-3xl ${
-            allDone ? 'bg-emerald-500/30' : 'bg-flame/30'
+            big ? 'bg-emerald-500/30' : 'bg-flame/30'
           }`}
         />
 
         <div className="relative">
-          {allDone ? (
+          {goal ? (
+            <div className="mx-auto mb-2 text-6xl">🏆</div>
+          ) : allDone ? (
             <div className="mx-auto mb-2 text-6xl">🎉</div>
           ) : (
             <div className="animate-flame mx-auto mb-3 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-flame to-rose-500 text-white shadow-lg shadow-flame/30">
@@ -92,31 +96,33 @@ export function Celebration() {
           )}
 
           <h2 className="text-2xl font-extrabold tracking-tight text-white">
-            {allDone ? 'Perfect day!' : "You're on a hot streak!"}
+            {goal ? 'Goal achieved!' : allDone ? 'Perfect day!' : "You're on a hot streak!"}
           </h2>
 
           <p className="mt-1.5 text-sm text-slate-400">
-            {allDone
-              ? `All ${celebration.total} daily tasks complete. Nothing left for today.`
-              : 'First task logged today — keep the momentum going.'}
+            {goal
+              ? `You reached “${celebration.title}”. That's the whole point.`
+              : allDone
+                ? `All ${celebration.total} daily tasks complete. Nothing left for today.`
+                : 'First task logged today — keep the momentum going.'}
           </p>
 
-          <div
-            className={`mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${
-              allDone
-                ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-flame/15 text-flame'
-            }`}
-          >
-            <Flame width={16} height={16} />
-            {streakLabel} streak
-          </div>
+          {!goal && (
+            <div
+              className={`mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${
+                allDone ? 'bg-emerald-500/15 text-emerald-400' : 'bg-flame/15 text-flame'
+              }`}
+            >
+              <Flame width={16} height={16} />
+              {streakLabel} streak
+            </div>
+          )}
 
           <button
             className="mt-6 block w-full rounded-xl bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
             onClick={dismiss}
           >
-            {allDone ? 'Nice!' : 'Keep going'}
+            {goal ? 'Awesome' : allDone ? 'Nice!' : 'Keep going'}
           </button>
         </div>
       </div>

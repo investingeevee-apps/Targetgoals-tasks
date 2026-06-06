@@ -63,6 +63,7 @@ interface State {
   screen: Screen
   currentListId: ID | null
   selectedTaskId: ID | null
+  selectedGoalId: ID | null
 
   // transient UI (not persisted)
   celebration: Celebration | null
@@ -72,6 +73,7 @@ interface State {
   setScreen: (screen: Screen) => void
   selectList: (id: ID) => void
   selectTask: (id: ID | null) => void
+  selectGoal: (id: ID | null) => void
 
   // ---- lists ----
   addList: (name: string) => void
@@ -158,15 +160,17 @@ export const useStore = create<State>()(
         screen: 'tasks',
         currentListId: initial.lists.find((l) => !l.deleted)?.id ?? null,
         selectedTaskId: null,
+        selectedGoalId: null,
         celebration: null,
 
         dismissCelebration: () => set({ celebration: null }),
 
         // ---- navigation ----
-        setScreen: (screen) => set({ screen, selectedTaskId: null }),
+        setScreen: (screen) => set({ screen, selectedTaskId: null, selectedGoalId: null }),
         selectList: (id) =>
           set({ screen: 'tasks', currentListId: id, selectedTaskId: null }),
         selectTask: (id) => set({ selectedTaskId: id }),
+        selectGoal: (id) => set({ screen: 'goals', selectedGoalId: id }),
 
         // ---- lists ----
         addList: (name) => {
@@ -577,12 +581,16 @@ export const useStore = create<State>()(
             }
           }),
         achieveGoal: (id) =>
-          set((s) => ({
-            goals: s.goals.map((g) =>
-              g.id === id ? { ...g, status: 'achieved', updatedAt: nowMs() } : g,
-            ),
-            dirty: dirtyWith(s, 'goal', id),
-          })),
+          set((s) => {
+            const g = s.goals.find((x) => x.id === id)
+            return {
+              goals: s.goals.map((x) =>
+                x.id === id ? { ...x, status: 'achieved', updatedAt: nowMs() } : x,
+              ),
+              dirty: dirtyWith(s, 'goal', id),
+              celebration: g ? { kind: 'goal', streak: 0, total: 0, title: g.title } : s.celebration,
+            }
+          }),
         archiveGoal: (id) =>
           set((s) => ({
             goals: s.goals.map((g) =>

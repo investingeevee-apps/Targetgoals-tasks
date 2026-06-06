@@ -46,7 +46,9 @@ export type Screen = 'tasks' | 'daily' | 'overview' | 'goals' | 'help'
  * - `allDone`: the user completed ALL of their daily tasks for the day.
  */
 export interface Celebration {
-  kind: 'logged' | 'allDone'
+  kind: 'logged' | 'allDone' | 'goal'
   streak: number
   total: number
+  /** Goal title, for the `goal` celebration. */
+  title?: string
 }

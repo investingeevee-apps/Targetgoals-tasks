@@ -1,9 +1,67 @@
 ﻿import { useMemo } from 'react'
 import { useStore } from '../store'
-import { computeStats, computeStreaks } from '@targetgoals/shared'
+import { computeGoalProgress, computeStats, computeStreaks } from '@targetgoals/shared'
 import { formatLongDate } from '@targetgoals/shared'
 import { buildDailyLog } from '../lib/transform'
 import { Heatmap } from './Heatmap'
+
+function GoalsOverview() {
+  const goals = useStore((s) => s.goals)
+  const tasks = useStore((s) => s.tasks)
+  const dailyTasks = useStore((s) => s.dailyTasks)
+  const completions = useStore((s) => s.dailyCompletions)
+  const selectGoal = useStore((s) => s.selectGoal)
+
+  const active = useMemo(
+    () =>
+      goals
+        .filter((g) => !g.deleted && g.status !== 'archived')
+        .sort(
+          (a, b) =>
+            (a.status === 'achieved' ? 1 : 0) - (b.status === 'achieved' ? 1 : 0) || a.order - b.order,
+        ),
+    [goals],
+  )
+  if (active.length === 0) return null
+
+  return (
+    <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-slate-200">Goals</h2>
+        <button className="text-xs text-accent hover:underline" onClick={() => selectGoal(null)}>
+          View all
+        </button>
+      </div>
+      <div className="space-y-3">
+        {active.map((g) => {
+          const milestones = tasks.filter((t) => t.goalId === g.id && !t.deleted)
+          const habits = dailyTasks.filter((d) => d.goalId === g.id && !d.deleted && !d.archived)
+          const p = computeGoalProgress(g, milestones, habits, completions)
+          return (
+            <button
+              key={g.id}
+              onClick={() => selectGoal(g.id)}
+              className="block w-full text-left transition-opacity hover:opacity-90"
+            >
+              <div className="mb-1 flex items-center justify-between text-sm">
+                <span className="truncate text-slate-200">{g.title}</span>
+                <span className="ml-2 shrink-0 text-xs font-semibold text-slate-400">
+                  {p.percent}%
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-500"
+                  style={{ width: `${p.percent}%` }}
+                />
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -91,6 +149,8 @@ export function OverviewScreen() {
           hint="of habits on active days"
         />
       </div>
+
+      <GoalsOverview />
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
         <div className="mb-4 flex items-center justify-between">

@@ -438,7 +438,8 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
 
 export function GoalsScreen() {
   const goals = useStore((s) => s.goals)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selectedId = useStore((s) => s.selectedGoalId)
+  const selectGoal = useStore((s) => s.selectGoal)
   const [creating, setCreating] = useState(false)
 
   const visible = useMemo(
@@ -455,7 +456,7 @@ export function GoalsScreen() {
   )
   const selected = selectedId ? goals.find((g) => g.id === selectedId && !g.deleted) : null
 
-  if (selected) return <GoalDetail goal={selected} onBack={() => setSelectedId(null)} />
+  if (selected) return <GoalDetail goal={selected} onBack={() => selectGoal(null)} />
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-8">
@@ -476,7 +477,7 @@ export function GoalsScreen() {
           <CreateGoalForm
             onDone={(id) => {
               setCreating(false)
-              if (id) setSelectedId(id)
+              if (id) selectGoal(id)
             }}
             onCancel={() => setCreating(false)}
           />
@@ -499,7 +500,7 @@ export function GoalsScreen() {
       ) : (
         <div className="space-y-3">
           {visible.map((g) => (
-            <GoalCard key={g.id} goal={g} onOpen={() => setSelectedId(g.id)} />
+            <GoalCard key={g.id} goal={g} onOpen={() => selectGoal(g.id)} />
           ))}
         </div>
       )}

@@ -4,6 +4,7 @@ import type { TaskDTO } from '@targetgoals/shared'
 import { formatDue, isOverdue } from '@targetgoals/shared'
 import { Calendar, CheckCircle, Circle, Plus, Star, Trash } from './Icons'
 import { GripHandle } from './Sortable'
+import { GoalChip } from './GoalChip'
 
 export function TaskItem({
   task,
@@ -56,6 +57,7 @@ export function TaskItem({
             </span>
           </button>
           <div className="mt-0.5 flex items-center gap-3 text-xs">
+            <GoalChip goalId={task.goalId} />
             {task.notes && !task.completed && (
               <span className="truncate text-slate-500">{task.notes}</span>
             )}
