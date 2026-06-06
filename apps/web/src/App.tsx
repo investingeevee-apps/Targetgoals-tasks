@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar'
 import { TasksScreen } from './components/TasksScreen'
 import { DailyScreen } from './components/DailyScreen'
 import { OverviewScreen } from './components/OverviewScreen'
+import { GoalsScreen } from './components/GoalsScreen'
 import { HelpScreen } from './components/HelpScreen'
 import { TaskDetail } from './components/TaskDetail'
 import { Celebration } from './components/Celebration'
@@ -30,6 +31,7 @@ export default function App() {
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {screen === 'tasks' && <TasksScreen />}
           {screen === 'daily' && <DailyScreen />}
+          {screen === 'goals' && <GoalsScreen />}
           {screen === 'overview' && <OverviewScreen />}
           {screen === 'help' && <HelpScreen />}
         </div>

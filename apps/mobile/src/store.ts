@@ -80,7 +80,7 @@ interface State {
   deleteSubtask: (taskId: ID, subtaskId: ID) => void
   reorderSubtasks: (taskId: ID, orderedIds: ID[]) => void
 
-  addDailyTask: (title: string) => void
+  addDailyTask: (title: string) => string
   renameDailyTask: (id: ID, title: string) => void
   deleteDailyTask: (id: ID) => void
   toggleDailyToday: (id: ID) => void
@@ -378,7 +378,7 @@ export const useStore = create<State>()(
 
         addDailyTask: (title) => {
           const trimmed = title.trim()
-          if (!trimmed) return
+          if (!trimmed) return ''
           const id = uid()
           set((s) => ({
             dailyTasks: [
@@ -395,6 +395,7 @@ export const useStore = create<State>()(
             ],
             dirty: { ...s.dirty, [`dailyTask:${id}`]: true },
           }))
+          return id
         },
         renameDailyTask: (id, title) => {
           const trimmed = title.trim()
