@@ -38,7 +38,8 @@ export function computeGoalProgress(
       const cur = goal.currentValue ?? 0
       const percent = target > 0 ? clampPct((cur / target) * 100) : 0
       const unit = goal.unit ? ` ${goal.unit}` : ''
-      return { percent, done: cur, total: target, label: `${trim(cur)} / ${trim(target)}${unit}` }
+      const label = target > 0 ? `${trim(cur)} / ${trim(target)}${unit}` : 'No target set'
+      return { percent, done: cur, total: target, label }
     }
     case 'habits': {
       const ids = new Set(habits.map((h) => h.id))
@@ -70,6 +71,8 @@ export type Pace = 'ahead' | 'onTrack' | 'behind' | 'noDeadline' | 'done'
 export function paceStatus(goal: GoalDTO, percent: number): Pace {
   if (percent >= 100) return 'done'
   if (!goal.targetDate) return 'noDeadline'
+  // Deadline already passed and not complete → behind, regardless of pace.
+  if (dayDiff(goal.targetDate, todayKey()) < 0) return 'behind'
   const start = goal.createdAt.slice(0, 10)
   const totalDays = dayDiff(goal.targetDate, start)
   if (totalDays <= 0) return 'onTrack'
@@ -94,6 +97,7 @@ export function projectedFinish(goal: GoalDTO): string | null {
   const gained = last.value - first.value
   if (days <= 0 || gained <= 0) return null
   const daysLeft = Math.ceil((target - cur) / (gained / days))
+  if (daysLeft <= 0) return null // already at/past pace — don't show a past date
   return addDays(todayKey(), daysLeft)
 }
 

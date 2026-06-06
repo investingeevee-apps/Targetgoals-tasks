@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import type { GoalDTO, GoalProgressMode, Pace } from '@targetgoals/shared'
 import {
@@ -107,7 +107,7 @@ function CreateGoalForm({ onDone, onCancel }: { onDone: (id: string) => void; on
       why,
       targetDate: targetDate || null,
       progressMode: mode,
-      targetValue: mode === 'metric' ? Number(targetValue) || null : null,
+      targetValue: mode === 'metric' && targetValue.trim() !== '' ? Number(targetValue) : null,
       unit: mode === 'metric' ? unit || null : null,
     })
     onDone(id)
@@ -202,8 +202,12 @@ function EditableRow({
   onUnlink?: () => void
 }) {
   const [draft, setDraft] = useState(title)
+  const committed = useRef(false)
   useEffect(() => {
-    if (editing) setDraft(title)
+    if (editing) {
+      setDraft(title)
+      committed.current = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing])
   return (
@@ -218,8 +222,14 @@ function EditableRow({
           onChangeText={setDraft}
           autoFocus
           returnKeyType="done"
-          onSubmitEditing={() => onCommitEdit(draft)}
-          onBlur={() => onCommitEdit(draft)}
+          onSubmitEditing={() => {
+            committed.current = true
+            onCommitEdit(draft)
+          }}
+          onBlur={() => {
+            if (!committed.current) onCommitEdit(draft)
+            committed.current = false
+          }}
         />
       ) : (
         <Pressable style={styles.flex1} onPress={onStartEdit}>

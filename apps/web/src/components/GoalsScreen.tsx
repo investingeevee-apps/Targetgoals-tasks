@@ -124,7 +124,7 @@ function CreateGoalForm({ onDone, onCancel }: { onDone: (id: string) => void; on
       why,
       targetDate: targetDate || null,
       progressMode: mode,
-      targetValue: mode === 'metric' ? Number(targetValue) || null : null,
+      targetValue: mode === 'metric' && targetValue.trim() !== '' ? Number(targetValue) : null,
       unit: mode === 'metric' ? unit || null : null,
     })
     onDone(id)

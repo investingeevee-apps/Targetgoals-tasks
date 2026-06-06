@@ -29,7 +29,7 @@ export function Celebration() {
           </Text>
           <Text style={styles.body}>
             {goal
-              ? `You reached “${celebration.title}”. That's the whole point.`
+              ? `You reached “${celebration.title ?? 'your goal'}”. That's the whole point.`
               : allDone
                 ? `All ${celebration.total} daily tasks complete.`
                 : 'First task logged today — keep it going.'}

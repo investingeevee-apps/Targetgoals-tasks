@@ -576,7 +576,13 @@ export const useStore = create<State>()(
             const goals = s.goals.map((g) =>
               g.id === id ? { ...g, deleted: true, updatedAt: t } : g,
             )
-            return { goals, tasks, dailyTasks, dirty }
+            return {
+              goals,
+              tasks,
+              dailyTasks,
+              dirty,
+              selectedGoalId: s.selectedGoalId === id ? null : s.selectedGoalId,
+            }
           }),
         reorderGoals: (orderedIds) =>
           set((s) => {
@@ -638,15 +644,20 @@ export const useStore = create<State>()(
         // ---- scheduling tasks into Today ----
         scheduleTask: (taskId, date) =>
           set((s) => ({
+            // a one-time date and a repeat are mutually exclusive
             tasks: s.tasks.map((t) =>
-              t.id === taskId ? { ...t, scheduledDate: date, updatedAt: nowMs() } : t,
+              t.id === taskId
+                ? { ...t, scheduledDate: date, recurrence: date ? null : t.recurrence, updatedAt: nowMs() }
+                : t,
             ),
             dirty: { ...s.dirty, [`task:${taskId}`]: true },
           })),
         setTaskRecurrence: (taskId, rule) =>
           set((s) => ({
             tasks: s.tasks.map((t) =>
-              t.id === taskId ? { ...t, recurrence: rule, updatedAt: nowMs() } : t,
+              t.id === taskId
+                ? { ...t, recurrence: rule, scheduledDate: rule ? null : t.scheduledDate, updatedAt: nowMs() }
+                : t,
             ),
             dirty: { ...s.dirty, [`task:${taskId}`]: true },
           })),
@@ -821,6 +832,8 @@ export const useStore = create<State>()(
               tasks: s.tasks,
               dailyTasks: s.dailyTasks,
               dailyCompletions: s.dailyCompletions,
+              goals: s.goals,
+              scheduledCompletions: s.scheduledCompletions,
             },
           })
         },
@@ -846,13 +859,18 @@ export const useStore = create<State>()(
             const tasks = (d.tasks as TaskDTO[]) ?? []
             const dailyTasks = (d.dailyTasks as DailyTaskDTO[]) ?? []
             const completions = (d.dailyCompletions as DailyCompletionDTO[]) ?? []
+            const goals = (d.goals as GoalDTO[]) ?? []
+            const schedCompletions = (d.scheduledCompletions as ScheduledCompletionDTO[]) ?? []
             mark('list', lists); mark('task', tasks)
             mark('dailyTask', dailyTasks); mark('completion', completions)
+            mark('goal', goals); mark('schedCompletion', schedCompletions)
             return {
               lists: mergeById(s.lists, lists),
               tasks: mergeById(s.tasks, tasks),
               dailyTasks: mergeById(s.dailyTasks, dailyTasks),
               dailyCompletions: mergeById(s.dailyCompletions, completions),
+              goals: mergeById(s.goals, goals),
+              scheduledCompletions: mergeById(s.scheduledCompletions, schedCompletions),
               dirty,
             }
           })

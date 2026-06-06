@@ -68,6 +68,31 @@ test('paceStatus: ahead / onTrack / behind vs elapsed time', () => {
   assert.equal(paceStatus(g, 100), 'done')
 })
 
+test('paceStatus: a passed deadline that is not complete is behind', () => {
+  const g = baseGoal({ targetDate: addDays(todayKey(), -1) })
+  assert.equal(paceStatus(g, 90), 'behind')
+  assert.equal(paceStatus(g, 100), 'done') // completed still wins
+})
+
+test('metric goal with no target shows "No target set", not "0 / 0"', () => {
+  const p = computeGoalProgress(baseGoal({ progressMode: 'metric', targetValue: null }), [], [], [])
+  assert.equal(p.percent, 0)
+  assert.equal(p.label, 'No target set')
+})
+
+test('projectedFinish returns null instead of a past date when ahead of pace', () => {
+  // gained 40 over 10 days = 4/day; only 2 remaining → daysLeft would be ~1, fine.
+  // But if currentValue is ahead of the log (target-cur tiny), daysLeft<=0 → null
+  const g = baseGoal({
+    progressMode: 'metric', targetValue: 50, currentValue: 50,
+    progressLog: [
+      { dateKey: addDays(todayKey(), -10), value: 0 },
+      { dateKey: todayKey(), value: 10 },
+    ],
+  })
+  assert.equal(projectedFinish(g), null) // cur >= target
+})
+
 test('projectedFinish extrapolates a metric goal from its log', () => {
   // gained 10 over 10 days = 1/day; 40 remaining → ~40 days out
   const g = baseGoal({

@@ -623,7 +623,13 @@ export const useStore = create<State>()(
             const goals = s.goals.map((g) =>
               g.id === id ? { ...g, deleted: true, updatedAt: t } : g,
             )
-            return { goals, tasks, dailyTasks, dirty }
+            return {
+              goals,
+              tasks,
+              dailyTasks,
+              dirty,
+              selectedGoalId: s.selectedGoalId === id ? null : s.selectedGoalId,
+            }
           }),
         reorderGoals: (orderedIds) =>
           set((s) => {
@@ -685,15 +691,20 @@ export const useStore = create<State>()(
         // ---- scheduling tasks into Today ----
         scheduleTask: (taskId, date) =>
           set((s) => ({
+            // a one-time date and a repeat are mutually exclusive
             tasks: s.tasks.map((t) =>
-              t.id === taskId ? { ...t, scheduledDate: date, updatedAt: nowMs() } : t,
+              t.id === taskId
+                ? { ...t, scheduledDate: date, recurrence: date ? null : t.recurrence, updatedAt: nowMs() }
+                : t,
             ),
             dirty: dirtyWith(s, 'task', taskId),
           })),
         setTaskRecurrence: (taskId, rule) =>
           set((s) => ({
             tasks: s.tasks.map((t) =>
-              t.id === taskId ? { ...t, recurrence: rule, updatedAt: nowMs() } : t,
+              t.id === taskId
+                ? { ...t, recurrence: rule, scheduledDate: rule ? null : t.scheduledDate, updatedAt: nowMs() }
+                : t,
             ),
             dirty: dirtyWith(s, 'task', taskId),
           })),

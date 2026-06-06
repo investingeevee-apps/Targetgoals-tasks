@@ -48,6 +48,14 @@ export function TaskDetailModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id])
 
+  // Local draft for the monthly day-of-month, so the field can be cleared/retyped
+  // (a store-bound value would snap back to its clamped value on every keystroke).
+  const [monthdayDraft, setMonthdayDraft] = useState('')
+  useEffect(() => {
+    const r = task?.recurrence
+    if (r?.freq === 'monthly') setMonthdayDraft(String(r.monthday ?? 1))
+  }, [task?.recurrence?.freq, task?.recurrence?.monthday])
+
   const open = screen === 'tasks' && !!task
   if (!task) return null
   const subDone = task.subtasks.filter((st) => st.completed).length
@@ -254,10 +262,12 @@ export function TaskDetailModal() {
                 <TextInput
                   style={styles.monthInput}
                   keyboardType="number-pad"
-                  value={String(rule?.monthday ?? 1)}
-                  onChangeText={(v) => {
-                    const n = Math.min(31, Math.max(1, Number(v) || 1))
+                  value={monthdayDraft}
+                  onChangeText={setMonthdayDraft}
+                  onEndEditing={() => {
+                    const n = Math.min(31, Math.max(1, Number(monthdayDraft) || 1))
                     setTaskRecurrence(tid, { freq: 'monthly', monthday: n })
+                    setMonthdayDraft(String(n))
                   }}
                 />
                 <Text style={styles.subtle2}>of each month</Text>

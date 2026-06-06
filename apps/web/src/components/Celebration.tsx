@@ -101,7 +101,7 @@ export function Celebration() {
 
           <p className="mt-1.5 text-sm text-slate-400">
             {goal
-              ? `You reached “${celebration.title}”. That's the whole point.`
+              ? `You reached “${celebration.title ?? 'your goal'}”. That's the whole point.`
               : allDone
                 ? `All ${celebration.total} daily tasks complete. Nothing left for today.`
                 : 'First task logged today — keep the momentum going.'}
