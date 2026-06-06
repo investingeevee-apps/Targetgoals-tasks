@@ -15,19 +15,26 @@ on your device; multi‑device sync via a server you run yourself is entirely op
 
 ## What it does
 
-| Tasks | Daily habits | Overview |
-| --- | --- | --- |
-| Lists, tasks, notes, due dates, stars, and inline **subtasks** | Recurring habits that reset every day at local midnight | Current & longest **streaks**, active days, and a contribution **heatmap** |
+| Goals | Today | Tasks | Overview |
+| --- | --- | --- | --- |
+| Set a goal, break it into milestones + habits, track **progress** | Habits **and** tasks scheduled for today | Lists, tasks, due dates, stars, inline **subtasks** | **Streaks** + a completion **heatmap** |
 
+- **Goals** — set a goal and choose how to measure it (steps, a number, or daily habits),
+  then **break it down** into milestones and linked habits. Watch a **progress ring**, an
+  **on‑track / behind** read, a target‑date countdown, and (for number goals) a
+  **projected finish date**. A 🏆 celebration when you reach it.
+- **Today** — one place for the day: your recurring **habits** plus any **tasks scheduled
+  for today**. Schedule a task for a one‑time date (carries over if overdue) or a repeat
+  (daily / specific weekdays / monthly) with per‑occurrence completion.
 - **Task lists** — multiple lists; tasks with notes, due dates, and stars. Subtasks show
   **inline** as an expandable checklist, and tasks/subtasks can be **reordered**
   (drag‑and‑drop on web, move buttons on mobile).
-- **Daily habits** — define recurring habits (e.g. *Exercise*, *Read*) that reset to
-  unchecked each day. Every day's completions are recorded forever.
-- **Overview** — total completions, active days, current & longest streaks, best day, and
-  a GitHub/Claude‑style activity heatmap.
-- **Streak celebrations** — a pop when you log your first habit of the day, and a bigger
-  one when you complete them all.
+- **Daily habits** — recurring habits that reset each day; every day's completions are
+  recorded forever, feeding your streaks.
+- **Overview** — total completions, active days, current & longest streaks, best day, a
+  GitHub/Claude‑style activity heatmap, and a **goals progress summary**.
+- **Streak & goal celebrations** — a pop when you log your first habit, a bigger one when
+  you finish them all, and a trophy moment when you achieve a goal.
 - **Private & offline‑first** — everything works with no account and no connection. Data
   is stored locally on the device.
 - **Local backup** — export/restore your data so you never lose it (mobile).

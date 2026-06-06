@@ -1,7 +1,7 @@
 {
   "name": "@targetgoals/web",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "TargetGoals Tasks — web client (local-first tasks, recurring daily tasks, completion overview).",
   "license": "MIT",

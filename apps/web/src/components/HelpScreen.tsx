@@ -44,7 +44,7 @@ export function HelpScreen() {
       </header>
 
       <div className="space-y-5">
-        <Section title="Use it on this computer">
+        <Section title="Getting started">
           <Step n={1} title="Install it as a desktop app">
             <p>
               In Chrome or Edge, open the install icon in the address bar (Edge:{' '}
@@ -53,10 +53,22 @@ export function HelpScreen() {
               opens in its own window like a native app and works offline.
             </p>
           </Step>
-          <Step n={2} title="Add tasks, daily habits, and watch your streak">
+          <Step n={2} title="Plan your day in Today">
             <p>
-              The <strong>Daily</strong> tab resets every day; the <strong>Overview</strong>{' '}
-              tab tracks streaks and a completion heatmap. Your data is saved locally.
+              The <strong>Today</strong> tab shows your recurring <strong>habits</strong> plus
+              any <strong>tasks scheduled for today</strong>. To schedule a task, open it and
+              use <strong>Add to Today</strong> — pick a one-time date, or a repeat
+              (daily / specific weekdays / monthly). Overdue one-time tasks carry over until
+              done. The <strong>Overview</strong> tab tracks streaks and a completion heatmap.
+            </p>
+          </Step>
+          <Step n={3} title="Set goals and break them down">
+            <p>
+              In the <strong>Goals</strong> tab, create a goal and choose how to measure it
+              (steps, a number, or daily habits). Then <strong>break it down</strong> into
+              milestones and linked daily habits and watch progress climb — with an on-track
+              read and, for number goals, a projected finish date. Everything's stored on your
+              device.
             </p>
           </Step>
         </Section>
