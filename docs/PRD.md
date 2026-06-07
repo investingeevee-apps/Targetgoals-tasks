@@ -234,7 +234,88 @@ Auth via bearer token; pairing via QR; transport over the user's private network
 
 ---
 
-## 10. Platforms, release & distribution
+## 10. Technology stack
+
+A TypeScript-first, npm-workspaces monorepo. The shared package holds all framework-free
+business logic so it can be unit-tested in isolation and reused by every app.
+
+### Languages & cross-cutting
+| Concern | Choice | Version |
+|---------|--------|---------|
+| Primary language | **TypeScript** (all packages, `strict`) | ~5.9.2 |
+| Runtime / scripts | Node.js + **tsx** (TS execution & test running) | tsx ^4.x |
+| Data query layer | SQL via Drizzle ORM over libSQL/SQLite | — |
+| Monorepo | **npm workspaces** | — |
+| Unit testing | **Node test runner** (`node --import tsx --test`) | built-in |
+| Dev environment | Windows + PowerShell; Git + GitHub | — |
+
+### `packages/shared` (`@targetgoals/shared`)
+Pure TypeScript, **zero runtime dependencies**. Houses the domain types and all pure
+logic: sync merge (LWW + tombstones), recurrence rules, goal progress/pace/ETA, and the
+Today-agenda builder. Covered by the unit-test suite (tsx + Node test runner).
+
+### `apps/web` — Web PWA
+| Area | Library | Version |
+|------|---------|---------|
+| UI framework | **React** / react-dom | ^19.1.0 |
+| Build tool | **Vite** + `@vitejs/plugin-react` | vite ^6.0.5 |
+| Styling | **Tailwind CSS** + PostCSS + autoprefixer | tailwindcss ^3.4.17 |
+| State | **Zustand** (+ `persist` to localStorage) | ^4.5.5 |
+| PWA / offline | **vite-plugin-pwa** (Workbox service worker, installable) | ^0.21.2 |
+| Drag & drop | **@dnd-kit** core / sortable / utilities | core ^6.3.1 |
+| Pairing UI | **qrcode.react** | ^4.2.0 |
+| Types | `@types/react`, `@types/react-dom`, TypeScript | ~5.9.2 |
+
+### `apps/server` — Self-hosted sync server
+| Area | Library | Version |
+|------|---------|---------|
+| HTTP framework | **Express** | ^4.21.2 |
+| Database | **libSQL client** (SQLite-compatible) | ^0.14.0 |
+| ORM / migrations | **Drizzle ORM** (+ idempotent `addColumnIfMissing`) | ^0.38.3 |
+| CORS / config | `cors`, `dotenv` | cors ^2.8.5 |
+| Pairing | `qrcode` (QR generation) | ^1.5.4 |
+| Runtime | **tsx** | ^4.19.2 |
+
+### `apps/mobile` — Android app (+ home-screen widget)
+| Area | Library | Version |
+|------|---------|---------|
+| Platform | **Expo SDK** | ~54.0.0 |
+| Native runtime | **React Native** / React | RN 0.81.5 · React 19.1.0 |
+| OTA updates | **expo-updates** | ~29.0.18 |
+| QR scanning | **expo-camera** | ~17.0.10 |
+| Notifications | **expo-notifications** | ~0.32.17 |
+| Home-screen widget | **react-native-android-widget** | ^0.20.3 |
+| Local persistence | **@react-native-async-storage/async-storage** | 2.2.0 |
+| State | **Zustand** | ^4.5.5 |
+| Native build config | `expo-build-properties` | ~1.0.10 |
+| Other Expo modules | `expo-clipboard`, `expo-constants`, `expo-status-bar`, `expo-system-ui`, `react-native-safe-area-context` | — |
+
+### Build, release & infrastructure
+| Concern | Tooling |
+|---------|---------|
+| Android builds | **EAS Build** (AAB for Play, APK for sideload; `versionCode` auto-increment) |
+| Over-the-air updates | **EAS Update** (channels `preview` / `production`; pinned `runtimeVersion`) |
+| CI orchestration | **EAS Workflows** (`.eas/workflows/create-production-builds.yml`) |
+| Distribution | **Google Play Console** (+ service account for `eas submit`) |
+| Source & site | **GitHub** + **GitHub Pages** → `targetgoals.ca` (marketing + privacy policy) |
+| Private sync transport | **Tailscale** (recommended; bearer token + QR pairing) |
+| Store screenshots | **Playwright** (`playwright-core`) driving system Chrome at 1080×1920 |
+
+### Notable choices & rationale
+- **Shared pure-logic package:** keeps sync/goal/recurrence logic framework-free and
+  unit-tested once, then reused by web and mobile — no duplicated business rules.
+- **Zustand on both clients:** small, fast, persist-friendly; the mobile store mirrors the
+  web store so behavior stays consistent.
+- **libSQL + Drizzle:** a single embedded SQLite file is trivial to self-host and back up,
+  while Drizzle gives typed queries and additive, idempotent migrations.
+- **Expo + EAS:** managed native builds and OTA without maintaining native toolchains;
+  `runtimeVersion` is decoupled from the display version so version names can change freely.
+- **No analytics/telemetry libraries** are included anywhere — consistent with the
+  zero-data-collection promise.
+
+---
+
+## 11. Platforms, release & distribution
 
 - **Web:** Built static assets served by the self-hosted server; installable PWA.
 - **Android:** EAS Build (AAB for Play, APK for sideload); EAS Update channels
@@ -248,7 +329,7 @@ Auth via bearer token; pairing via QR; transport over the user's private network
 
 ---
 
-## 11. Success metrics
+## 12. Success metrics
 
 Because we collect **no telemetry**, success is measured via **external, privacy-preserving
 signals** only:
@@ -264,7 +345,7 @@ Explicitly **not** tracked: in-app user behavior, funnels, or per-feature usage 
 
 ---
 
-## 12. Roadmap (indicative)
+## 13. Roadmap (indicative)
 
 - **v0.2 (current):** Goals (full hybrid), Today + scheduled/recurring tasks, responsive
   web, Play internal testing, store assets.
@@ -279,7 +360,7 @@ Explicitly **not** tracked: in-app user behavior, funnels, or per-feature usage 
 
 ---
 
-## 13. Risks & mitigations
+## 14. Risks & mitigations
 
 | Risk | Mitigation |
 |------|-----------|
@@ -292,7 +373,7 @@ Explicitly **not** tracked: in-app user behavior, funnels, or per-feature usage 
 
 ---
 
-## 14. Open questions
+## 15. Open questions
 1. Default recurrence richness for v0.3 (add every-N-days / end-dates now or later?).
 2. Should metric goals support multiple sub-metrics, or stay single-number?
 3. Notification delivery on web (PWA push) vs Android-native — unify or platform-specific?
