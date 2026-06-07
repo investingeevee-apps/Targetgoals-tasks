@@ -1,0 +1,22 @@
+name: Create Production Builds
+
+# Run manually with:  npx eas-cli@latest workflow:run create-production-builds.yml
+# (from apps/mobile). Produces a production Android App Bundle (.aab) for Play.
+
+jobs:
+  build_android:
+    type: build # production build for Android (AAB, 'production' profile)
+    params:
+      platform: android
+      profile: production
+
+  # iOS is not set up for this Android-only app (no bundleIdentifier / no Apple
+  # Developer account), so the iOS build job is disabled — enabling it as-is would
+  # fail every run. To add iOS later: configure app.json `ios.bundleIdentifier`,
+  # join the Apple Developer Program, then uncomment the job below.
+  #
+  # build_ios:
+  #   type: build # production build for iOS
+  #   params:
+  #     platform: ios
+  #     profile: production
