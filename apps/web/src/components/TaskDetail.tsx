@@ -29,7 +29,7 @@ export function TaskDetail({ task }: { task: TaskDTO }) {
   const subDone = task.subtasks.filter((st) => st.completed).length
 
   return (
-    <div className="flex w-80 shrink-0 flex-col border-l border-slate-800 bg-slate-950">
+    <div className="fixed inset-0 z-40 flex flex-col bg-slate-950 md:static md:inset-auto md:z-auto md:w-80 md:shrink-0 md:border-l md:border-slate-800">
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
         <span className="text-sm font-semibold text-slate-200">Details</span>
         <button

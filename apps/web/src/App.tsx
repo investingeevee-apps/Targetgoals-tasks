@@ -9,6 +9,7 @@ import { GoalsScreen } from './components/GoalsScreen'
 import { HelpScreen } from './components/HelpScreen'
 import { TaskDetail } from './components/TaskDetail'
 import { Celebration } from './components/Celebration'
+import { MobileNav } from './components/MobileNav'
 import { SyncSettingsModal } from './components/SyncSettings'
 import { UpdatePrompt } from './components/UpdatePrompt'
 
@@ -27,7 +28,7 @@ export default function App() {
     <div className="flex h-full bg-slate-900 text-slate-100">
       <Sidebar />
 
-      <main className="flex min-w-0 flex-1 overflow-hidden">
+      <main className="flex min-w-0 flex-1 overflow-hidden pb-14 md:pb-0">
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {screen === 'tasks' && <TasksScreen />}
           {screen === 'daily' && <DailyScreen />}
@@ -41,6 +42,7 @@ export default function App() {
         )}
       </main>
 
+      <MobileNav />
       <Celebration />
       <SyncSettingsModal />
       <UpdatePrompt />

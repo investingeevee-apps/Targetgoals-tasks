@@ -38,7 +38,7 @@ export function Sidebar() {
     'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors'
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-950">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-950 md:flex">
       <div className="px-5 py-5">
         <img src={wordmark} alt="TargetGoals" className="h-7 w-auto" />
         <div className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">

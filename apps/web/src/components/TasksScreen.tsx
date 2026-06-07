@@ -10,7 +10,10 @@ export function TasksScreen() {
     s.lists.find((l) => l.id === s.currentListId && !l.deleted),
   )
   const tasks = useStore((s) => s.tasks)
+  const allLists = useStore((s) => s.lists)
   const addTask = useStore((s) => s.addTask)
+  const addList = useStore((s) => s.addList)
+  const selectList = useStore((s) => s.selectList)
   const renameList = useStore((s) => s.renameList)
   const deleteList = useStore((s) => s.deleteList)
   const clearCompleted = useStore((s) => s.clearCompleted)
@@ -19,6 +22,12 @@ export function TasksScreen() {
   const [draft, setDraft] = useState('')
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
+
+  const visibleLists = useMemo(() => allLists.filter((l) => !l.deleted), [allLists])
+  function newList() {
+    const name = window.prompt('New list name')?.trim()
+    if (name) addList(name)
+  }
 
   const { active, done } = useMemo(() => {
     const mine = tasks.filter((t) => t.listId === currentListId && !t.deleted)
@@ -36,8 +45,29 @@ export function TasksScreen() {
 
   if (!list || !currentListId) {
     return (
-      <div className="grid flex-1 place-items-center text-slate-500">
-        No list selected. Create one from the sidebar.
+      <div className="grid flex-1 place-items-center px-6 text-center text-slate-500">
+        <div>
+          <p>No list selected.</p>
+          {visibleLists.length > 0 ? (
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {visibleLists.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => selectList(l.id)}
+                  className="rounded-full border border-slate-800 px-3 py-1 text-sm text-slate-300 hover:bg-slate-800/60"
+                >
+                  {l.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <button
+            onClick={newList}
+            className="mt-4 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+          >
+            + New list
+          </button>
+        </div>
       </div>
     )
   }
@@ -50,6 +80,29 @@ export function TasksScreen() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-8">
+      {/* Mobile list switcher (the sidebar is hidden on phones) */}
+      <div className="mb-4 flex gap-1.5 overflow-x-auto md:hidden">
+        {visibleLists.map((l) => (
+          <button
+            key={l.id}
+            onClick={() => selectList(l.id)}
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+              l.id === currentListId
+                ? 'bg-accent text-white'
+                : 'border border-slate-800 text-slate-300'
+            }`}
+          >
+            {l.name}
+          </button>
+        ))}
+        <button
+          onClick={newList}
+          className="shrink-0 rounded-full border border-slate-800 px-3 py-1 text-xs text-slate-400"
+        >
+          + New
+        </button>
+      </div>
+
       <header className="mb-6 flex items-center justify-between gap-3">
         {editingName ? (
           <input
