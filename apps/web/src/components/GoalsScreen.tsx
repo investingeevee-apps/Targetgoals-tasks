@@ -211,6 +211,8 @@ function CreateGoalForm({ onDone, onCancel }: { onDone: (id: string) => void; on
 function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const { milestones, habits, progress, pace, streak, projected } = useGoalStats(goal)
   const lists = useStore((s) => s.lists)
+  const addList = useStore((s) => s.addList)
+  const selectGoal = useStore((s) => s.selectGoal)
   const allHabits = useStore((s) => s.dailyTasks)
   const completions = useStore((s) => s.dailyCompletions)
   const addMilestone = useStore((s) => s.addMilestone)
@@ -245,10 +247,18 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const unlinkedHabits = allHabits.filter((h) => !h.deleted && !h.archived && !h.goalId)
 
   function addMs() {
-    if (msDraft.trim() && listId) {
-      addMilestone(goal.id, listId, msDraft)
-      setMsDraft('')
+    if (!msDraft.trim()) return
+    let lid = listId
+    if (!lid) {
+      // No list yet — make one so the milestone has a home. addList navigates to
+      // the Tasks screen and clears the selection, so re-select this goal to keep
+      // the user on the goal detail.
+      lid = addList('My Tasks') ?? ''
+      if (lid) selectGoal(goal.id)
     }
+    if (!lid) return
+    addMilestone(goal.id, lid, msDraft)
+    setMsDraft('')
   }
   function addHabit() {
     if (!habitDraft.trim()) return

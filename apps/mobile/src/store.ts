@@ -60,7 +60,7 @@ interface State {
 
   // lists
   selectList: (id: ID) => void
-  addList: (name: string) => void
+  addList: (name: string) => ID | undefined
   renameList: (id: ID, name: string) => void
   deleteList: (id: ID) => void
 
@@ -154,13 +154,14 @@ export const useStore = create<State>()(
         selectList: (id) => set({ currentListId: id, selectedTaskId: null }),
         addList: (name) => {
           const trimmed = name.trim()
-          if (!trimmed) return
+          if (!trimmed) return undefined
           const id = uid()
           set((s) => ({
             lists: [...s.lists, { id, name: trimmed, createdAt: nowIso(), updatedAt: nowMs(), deleted: false }],
             dirty: { ...s.dirty, [`list:${id}`]: true },
             currentListId: id,
           }))
+          return id
         },
         renameList: (id, name) => {
           const trimmed = name.trim()

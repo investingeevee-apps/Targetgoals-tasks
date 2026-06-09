@@ -76,7 +76,7 @@ interface State {
   selectGoal: (id: ID | null) => void
 
   // ---- lists ----
-  addList: (name: string) => void
+  addList: (name: string) => string | undefined
   renameList: (id: ID, name: string) => void
   deleteList: (id: ID) => void
 
@@ -175,7 +175,7 @@ export const useStore = create<State>()(
         // ---- lists ----
         addList: (name) => {
           const trimmed = name.trim()
-          if (!trimmed) return
+          if (!trimmed) return undefined
           const id = uid()
           set((s) => ({
             lists: [
@@ -186,6 +186,7 @@ export const useStore = create<State>()(
             screen: 'tasks',
             currentListId: id,
           }))
+          return id
         },
         renameList: (id, name) => {
           const trimmed = name.trim()

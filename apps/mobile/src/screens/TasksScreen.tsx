@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   Pressable,
@@ -35,6 +35,15 @@ export function TasksScreen() {
   const [draft, setDraft] = useState('')
   const [addingList, setAddingList] = useState(false)
   const [listName, setListName] = useState('')
+  // Guard so onSubmitEditing + the onBlur it triggers (input unmounts) only create once.
+  const listCommitted = useRef(false)
+  function commitList() {
+    if (listCommitted.current) return
+    listCommitted.current = true
+    if (listName.trim()) addList(listName)
+    setListName('')
+    setAddingList(false)
+  }
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
 
@@ -80,19 +89,18 @@ export function TasksScreen() {
             placeholderTextColor={colors.textFaint}
             autoFocus
             returnKeyType="done"
-            onBlur={() => {
-              if (listName.trim()) addList(listName)
-              setListName('')
-              setAddingList(false)
-            }}
-            onSubmitEditing={() => {
-              if (listName.trim()) addList(listName)
-              setListName('')
-              setAddingList(false)
-            }}
+            blurOnSubmit
+            onBlur={commitList}
+            onSubmitEditing={commitList}
           />
         ) : (
-          <Pressable style={styles.listChip} onPress={() => setAddingList(true)}>
+          <Pressable
+            style={styles.listChip}
+            onPress={() => {
+              listCommitted.current = false
+              setAddingList(true)
+            }}
+          >
             <Text style={styles.listChipText}>＋ List</Text>
           </Pressable>
         )}

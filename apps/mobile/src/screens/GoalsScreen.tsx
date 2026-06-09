@@ -253,6 +253,7 @@ function EditableRow({
 function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const { milestones, habits, progress, pace, streak, projected } = useGoalStats(goal)
   const lists = useStore((s) => s.lists)
+  const addList = useStore((s) => s.addList)
   const completions = useStore((s) => s.dailyCompletions)
   const addMilestone = useStore((s) => s.addMilestone)
   const toggleTask = useStore((s) => s.toggleTask)
@@ -285,10 +286,13 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const cd = countdown(goal.targetDate)
 
   function addMs() {
-    if (msDraft.trim() && listId) {
-      addMilestone(goal.id, listId, msDraft)
-      setMsDraft('')
-    }
+    if (!msDraft.trim()) return
+    // Milestones are tasks, which need a list. If the user has none yet, make one
+    // automatically so adding a step never silently fails.
+    const lid = listId || addList('My Tasks')
+    if (!lid) return
+    addMilestone(goal.id, lid, msDraft)
+    setMsDraft('')
   }
   function addHabit() {
     if (!habitDraft.trim()) return
@@ -389,8 +393,12 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
           placeholder="Add a step"
           placeholderTextColor={colors.textFaint}
           returnKeyType="done"
+          blurOnSubmit={false}
           onSubmitEditing={addMs}
         />
+        <Pressable style={styles.addBtn} onPress={addMs} disabled={!msDraft.trim()}>
+          <Text style={[styles.addBtnText, !msDraft.trim() && styles.addBtnTextOff]}>Add</Text>
+        </Pressable>
       </View>
 
       <Text style={styles.sectionTitle}>Daily habits</Text>
@@ -419,8 +427,12 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
           placeholder="Add a daily habit for this goal"
           placeholderTextColor={colors.textFaint}
           returnKeyType="done"
+          blurOnSubmit={false}
           onSubmitEditing={addHabit}
         />
+        <Pressable style={styles.addBtn} onPress={addHabit} disabled={!habitDraft.trim()}>
+          <Text style={[styles.addBtnText, !habitDraft.trim() && styles.addBtnTextOff]}>Add</Text>
+        </Pressable>
       </View>
 
       <View style={styles.actions}>
@@ -578,6 +590,9 @@ const styles = StyleSheet.create({
   },
   addPlus: { color: colors.accent, fontSize: 16, fontWeight: '700' },
   addInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 2 },
+  addBtn: { backgroundColor: colors.accent, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  addBtnText: { color: colors.accentText, fontSize: 13, fontWeight: '700' },
+  addBtnTextOff: { opacity: 0.5 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 28, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 18, flexWrap: 'wrap' },
   achieveBtn: { backgroundColor: 'rgba(16,185,129,0.15)', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
   achieveBtnText: { color: colors.green, fontWeight: '700' },
