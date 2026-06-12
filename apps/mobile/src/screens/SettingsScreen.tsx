@@ -8,6 +8,7 @@ import { useSync } from '../sync/store'
 import { useStore } from '../store'
 import { formatTime, shiftTime, useNotifPrefs } from '../notifications/store'
 import { colors } from '../theme'
+import { QrCode } from '../components/QrCode'
 
 function DataSection() {
   const exportData = useStore((s) => s.exportData)
@@ -47,6 +48,41 @@ function DataSection() {
         </Pressable>
       </View>
       {msg ? <Text style={isError ? styles.error : styles.okMsg}>{msg}</Text> : null}
+    </View>
+  )
+}
+
+/** Shown when connected: generate a QR / copyable details so another device can join. */
+function LinkDeviceSection({ url, token }: { url: string; token: string }) {
+  const [copied, setCopied] = useState<string | null>(null)
+  const payload = JSON.stringify({ url, token, name: 'TargetGoals Tasks' } satisfies PairingPayload)
+
+  async function copy(label: string, text: string) {
+    await Clipboard.setStringAsync(text)
+    setCopied(label)
+  }
+
+  return (
+    <View style={styles.linkBox}>
+      <Text style={styles.sectionTitle}>Link another device</Text>
+      <Text style={styles.subtle}>
+        Scan this from another phone (Settings → Scan pairing QR), or copy the URL + token to
+        set up the web app. Every paired device then syncs through your server.
+      </Text>
+      <View style={styles.qrWrap}>
+        <View style={styles.qrCard}>
+          <QrCode value={payload} size={216} />
+        </View>
+      </View>
+      <View style={styles.btnRow}>
+        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={() => copy('URL', url)}>
+          <Text style={styles.secondaryBtnText}>Copy URL</Text>
+        </Pressable>
+        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={() => copy('Token', token)}>
+          <Text style={styles.secondaryBtnText}>Copy token</Text>
+        </Pressable>
+      </View>
+      {copied ? <Text style={styles.okMsg}>{copied} copied to clipboard.</Text> : null}
     </View>
   )
 }
@@ -266,6 +302,10 @@ export function SettingsScreen() {
             <Text style={styles.secondaryBtnText}>Sync now</Text>
           </Pressable>
         </View>
+
+        {connected && savedUrl && savedToken ? (
+          <LinkDeviceSection url={savedUrl} token={savedToken} />
+        ) : null}
       </View>
     </ScrollView>
   )
@@ -321,6 +361,9 @@ const styles = StyleSheet.create({
   },
   stepText: { color: colors.accent, fontSize: 16, fontWeight: '700' },
   timeValue: { color: colors.text, fontSize: 14, fontWeight: '600', minWidth: 72, textAlign: 'center' },
+  linkBox: { marginTop: 22, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14 },
+  qrWrap: { alignItems: 'center', marginTop: 14 },
+  qrCard: { backgroundColor: '#fff', padding: 12, borderRadius: 12 },
   scannerWrap: { flex: 1, backgroundColor: '#000' },
   scannerOverlay: { position: 'absolute', bottom: 60, left: 0, right: 0, alignItems: 'center', gap: 16 },
   scannerText: { color: '#fff', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
