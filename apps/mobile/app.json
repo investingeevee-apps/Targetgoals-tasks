@@ -2,7 +2,7 @@
   "expo": {
     "name": "TargetGoals Tasks",
     "slug": "targetgoals-tasks",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "portrait",
     "scheme": "targetgoals",
     "userInterfaceStyle": "dark",
@@ -13,7 +13,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#0b1220"
     },
-    "runtimeVersion": "0.1.0",
+    "runtimeVersion": "0.3.0",
     "updates": {
       "url": "https://u.expo.dev/6f90eccc-4125-4230-b256-9efe5cdab72f"
     },
@@ -61,7 +61,7 @@
       "eas": {
         "projectId": "6f90eccc-4125-4230-b256-9efe5cdab72f"
       },
-      "appVersion": "0.2.0"
+      "appVersion": "0.3.0"
     },
     "owner": "deveevee"
   }

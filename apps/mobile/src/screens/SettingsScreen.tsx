@@ -3,6 +3,9 @@ import { ScrollView, StyleSheet, Switch, Text, TextInput, View, Pressable } from
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import type { BarcodeScanningResult } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
+import * as FileSystem from 'expo-file-system/legacy'
+import * as Sharing from 'expo-sharing'
+import * as DocumentPicker from 'expo-document-picker'
 import type { PairingPayload } from '@targetgoals/shared'
 import { useSync } from '../sync/store'
 import { useStore } from '../store'
@@ -16,14 +19,7 @@ function DataSection() {
   const [msg, setMsg] = useState<string | null>(null)
   const [isError, setIsError] = useState(false)
 
-  async function onExport() {
-    await Clipboard.setStringAsync(exportData())
-    setIsError(false)
-    setMsg('Backup copied to clipboard. Paste it somewhere safe — notes, email, or a file.')
-  }
-  async function onImport() {
-    const text = await Clipboard.getStringAsync()
-    const res = importData(text)
+  function showImportResult(res: ReturnType<typeof importData>) {
     setIsError(!res.ok)
     setMsg(
       res.ok
@@ -32,18 +28,74 @@ function DataSection() {
     )
   }
 
+  async function onSendFile() {
+    try {
+      if (!(await Sharing.isAvailableAsync())) {
+        setIsError(true)
+        setMsg('Sharing is not available on this device — use "Copy to clipboard" instead.')
+        return
+      }
+      const date = new Date().toISOString().slice(0, 10)
+      const uri = `${FileSystem.cacheDirectory}targetgoals-backup-${date}.json`
+      await FileSystem.writeAsStringAsync(uri, exportData())
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/json',
+        dialogTitle: 'Send TargetGoals backup',
+      })
+      setIsError(false)
+      setMsg('Backup file ready — sent via the app you picked.')
+    } catch {
+      setIsError(true)
+      setMsg('Could not create the backup file. Try "Copy to clipboard" instead.')
+    }
+  }
+
+  async function onRestoreFile() {
+    try {
+      const picked = await DocumentPicker.getDocumentAsync({
+        // Backups arrive via email/Drive/Quick Share with inconsistent MIME types,
+        // so accept broadly — importData validates the contents anyway.
+        type: ['application/json', 'text/plain', 'application/octet-stream'],
+        copyToCacheDirectory: true,
+      })
+      if (picked.canceled || !picked.assets[0]) return
+      const text = await FileSystem.readAsStringAsync(picked.assets[0].uri)
+      showImportResult(importData(text))
+    } catch {
+      setIsError(true)
+      setMsg('Could not read that file.')
+    }
+  }
+
+  async function onCopy() {
+    await Clipboard.setStringAsync(exportData())
+    setIsError(false)
+    setMsg('Backup copied to clipboard. Paste it somewhere safe — notes, email, or a file.')
+  }
+  async function onPaste() {
+    showImportResult(importData(await Clipboard.getStringAsync()))
+  }
+
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Backup</Text>
+      <Text style={styles.sectionTitle}>Backup &amp; transfer</Text>
       <Text style={styles.subtle}>
-        Your data lives on this device. Copy a backup so you don't lose it if you reinstall,
-        and restore it on a new phone.
+        Your data lives on this device. Send a backup file to your new phone (Quick Share,
+        Bluetooth, email…) and restore it there — or keep a copy somewhere safe.
       </Text>
       <View style={styles.btnRow}>
-        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={onExport}>
-          <Text style={styles.secondaryBtnText}>Copy backup</Text>
+        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={onSendFile}>
+          <Text style={styles.secondaryBtnText}>Send backup file</Text>
         </Pressable>
-        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={onImport}>
+        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={onRestoreFile}>
+          <Text style={styles.secondaryBtnText}>Restore from file</Text>
+        </Pressable>
+      </View>
+      <View style={styles.btnRow}>
+        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={onCopy}>
+          <Text style={styles.secondaryBtnText}>Copy to clipboard</Text>
+        </Pressable>
+        <Pressable style={[styles.secondaryBtn, styles.flex]} onPress={onPaste}>
           <Text style={styles.secondaryBtnText}>Restore from clipboard</Text>
         </Pressable>
       </View>
