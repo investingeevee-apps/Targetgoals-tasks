@@ -58,3 +58,4 @@ Thumbs.db
 google-service-account*.json
 **/google-service-account*.json
 play-service-account*.json
+releases/
