@@ -64,11 +64,22 @@ export async function syncNotifications(): Promise<void> {
     if (prefs.dailyReminder) {
       let when = todayAt(prefs.dailyTime)
       const now = new Date()
-      if (allDone || when <= now) when = new Date(when.getTime() + 86_400_000)
+      // The notification body is frozen at schedule time but read at fire time, so a
+      // live "X of N done today" count is only valid if it fires on the SAME day. When
+      // we push it to tomorrow (the typical morning reminder, scheduled the night
+      // before), today's count would be stale by morning — show a fresh prompt instead.
+      let firesToday = true
+      if (allDone || when <= now) {
+        when = new Date(when.getTime() + 86_400_000)
+        firesToday = false
+      }
+      const taskWord = total === 1 ? 'task' : 'tasks'
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Log your daily tasks',
-          body: allDone ? 'New day — keep the momentum going.' : `${doneCount} of ${total} done today`,
+          body: firesToday
+            ? `${doneCount} of ${total} done today`
+            : `You have ${total} ${taskWord} to complete today`,
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when, channelId: CHANNEL },
       })
