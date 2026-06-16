@@ -3,7 +3,7 @@ import { useStore } from '../store'
 import { computeGoalProgress, computeStats, computeStreaks } from '@targetgoals/shared'
 import { formatLongDate } from '@targetgoals/shared'
 import { buildDailyLog } from '../lib/transform'
-import { YearCalendar } from './YearCalendar'
+import { ActivityCalendar } from './ActivityCalendar'
 
 function GoalsOverview() {
   const goals = useStore((s) => s.goals)
@@ -157,9 +157,8 @@ export function OverviewScreen() {
           <h2 className="text-sm font-semibold text-slate-200">
             Completion activity
           </h2>
-          <span className="text-xs text-slate-500">full year</span>
         </div>
-        <YearCalendar log={dailyLog} />
+        <ActivityCalendar log={dailyLog} />
       </div>
     </div>
   )

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import {
+  buildMonthGrid,
+  buildWeekGrid,
   buildYearGrid,
   computeGoalProgress,
   computeStats,
@@ -14,7 +16,29 @@ import { buildDailyLog } from '../lib/transform'
 import { colors, heatLevels } from '../theme'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+const WD = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const GUTTER_DAYS = new Set([1, 5, 10, 15, 20, 25, 31])
+const shortDate = (key: string) => `${MONTHS[Number(key.slice(5, 7)) - 1]} ${Number(key.slice(8))}`
+
+/** A numbered, heat-shaded day cell (week + month views). */
+function NumCell({ cell, todayStr, max, size }: { cell: { key: string | null; count: number }; todayStr: string; max: number; size: number }) {
+  if (!cell.key) return <View style={{ width: size, height: size, margin: 2 }} />
+  const future = cell.key > todayStr
+  const lvl = intensity(cell.count, max)
+  return (
+    <View
+      style={[
+        { width: size, height: size, borderRadius: 7, margin: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: future ? 'transparent' : heatLevels[lvl] },
+        cell.key === todayStr ? { borderWidth: 1.5, borderColor: colors.accent } : null,
+      ]}
+    >
+      <Text style={{ color: future ? colors.textFaint : lvl >= 3 ? '#fff' : colors.text, fontSize: 11 }}>
+        {Number(cell.key.slice(8))}
+      </Text>
+    </View>
+  )
+}
 
 function GoalsOverview() {
   const goals = useStore((s) => s.goals)
@@ -96,6 +120,11 @@ export function OverviewScreen() {
   const [year, setYear] = useState(currentYear)
   const yearGrid = useMemo(() => buildYearGrid(dailyLog, year), [dailyLog, year])
 
+  const [view, setView] = useState<'week' | 'month' | 'year'>('year')
+  const weekCells = useMemo(() => buildWeekGrid(dailyLog, todayStr), [dailyLog, todayStr])
+  const monthM = today.getMonth()
+  const monthWeeks = useMemo(() => buildMonthGrid(dailyLog, currentYear, monthM), [dailyLog, currentYear, monthM])
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.h1}>Overview</Text>
@@ -123,6 +152,54 @@ export function OverviewScreen() {
       <View style={styles.heatCard}>
         <Text style={styles.heatTitle}>Completion activity</Text>
 
+        <View style={styles.segment}>
+          {(['week', 'month', 'year'] as const).map((v) => (
+            <Pressable key={v} style={[styles.segmentBtn, view === v && styles.segmentBtnOn]} onPress={() => setView(v)}>
+              <Text style={[styles.segmentText, view === v && styles.segmentTextOn]}>
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {view === 'week' && (
+          <View>
+            <Text style={styles.periodLabel}>
+              This week · {shortDate(weekCells[0].key!)} – {shortDate(weekCells[6].key!)}
+            </Text>
+            <View style={styles.weekRow}>
+              {weekCells.map((cell, i) => (
+                <View key={cell.key} style={styles.weekCol}>
+                  <Text style={styles.wdLabel}>{WD[i]}</Text>
+                  <NumCell cell={cell} todayStr={todayStr} max={max} size={36} />
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {view === 'month' && (
+          <View>
+            <Text style={styles.periodLabel}>
+              {MONTHS_LONG[monthM]} {currentYear}
+            </Text>
+            <View style={styles.monthWeekRow}>
+              {WD.map((d, i) => (
+                <Text key={i} style={styles.wdHeaderText}>{d}</Text>
+              ))}
+            </View>
+            {monthWeeks.map((wk, wi) => (
+              <View key={wi} style={styles.monthWeekRow}>
+                {wk.map((cell, ci) => (
+                  <NumCell key={cell.key ?? `p-${ci}`} cell={cell} todayStr={todayStr} max={max} size={36} />
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {view === 'year' && (
+        <>
         <View style={styles.yearNav}>
           <Pressable disabled={year <= minYear} onPress={() => setYear((y) => Math.max(minYear, y - 1))} hitSlop={10}>
             <Text style={[styles.navArrow, year <= minYear && styles.navArrowOff]}>‹</Text>
@@ -164,6 +241,8 @@ export function OverviewScreen() {
             ))}
           </View>
         </ScrollView>
+        </>
+        )}
 
         <View style={styles.legendRow}>
           <Text style={styles.legendText}>Less</Text>
@@ -206,6 +285,20 @@ const styles = StyleSheet.create({
   },
   heatTitle: { color: colors.text, fontWeight: '700', fontSize: 14, marginBottom: 12 },
   heatCell: { width: 13, height: 13, borderRadius: 3 },
+  segment: {
+    flexDirection: 'row', alignSelf: 'center', borderWidth: 1, borderColor: colors.border,
+    borderRadius: 10, padding: 3, marginBottom: 14,
+  },
+  segmentBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 },
+  segmentBtnOn: { backgroundColor: colors.accent },
+  segmentText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
+  segmentTextOn: { color: '#fff' },
+  periodLabel: { color: colors.text, fontSize: 13, fontWeight: '700', textAlign: 'center', marginBottom: 10 },
+  weekRow: { flexDirection: 'row', justifyContent: 'center' },
+  weekCol: { alignItems: 'center' },
+  wdLabel: { color: colors.textFaint, fontSize: 10, marginBottom: 4 },
+  monthWeekRow: { flexDirection: 'row', justifyContent: 'center' },
+  wdHeaderText: { color: colors.textFaint, fontSize: 10, width: 40, textAlign: 'center', marginBottom: 2 },
   yearNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 12 },
   navArrow: { color: colors.textDim, fontSize: 22, fontWeight: '700', paddingHorizontal: 8 },
   navArrowOff: { opacity: 0.3 },

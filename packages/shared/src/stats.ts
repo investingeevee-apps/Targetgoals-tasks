@@ -169,6 +169,44 @@ export function buildYearGrid(log: DailyLog, year: number): YearCell[][] {
   return months
 }
 
+/** 7 cells (Sunday→Saturday) for the week containing `anchor`. */
+export function buildWeekGrid(log: DailyLog, anchor: string): YearCell[] {
+  const dow = fromKey(anchor).getDay() // 0=Sun
+  const sunday = addDays(anchor, -dow)
+  const cells: YearCell[] = []
+  for (let i = 0; i < 7; i++) {
+    const key = addDays(sunday, i)
+    cells.push({ key, count: log[key]?.length ?? 0 })
+  }
+  return cells
+}
+
+/**
+ * Calendar weeks for a month: each row is 7 cells (Sunday→Saturday). Days that
+ * fall outside the month (leading/trailing padding) get `key: null`.
+ */
+export function buildMonthGrid(log: DailyLog, year: number, month: number): YearCell[][] {
+  const mm = String(month + 1).padStart(2, '0')
+  const firstDow = fromKey(`${year}-${mm}-01`).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const weeks: YearCell[][] = []
+  let week: YearCell[] = []
+  for (let i = 0; i < firstDow; i++) week.push({ key: null, count: 0 })
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${year}-${mm}-${String(d).padStart(2, '0')}`
+    week.push({ key, count: log[key]?.length ?? 0 })
+    if (week.length === 7) {
+      weeks.push(week)
+      week = []
+    }
+  }
+  if (week.length > 0) {
+    while (week.length < 7) week.push({ key: null, count: 0 })
+    weeks.push(week)
+  }
+  return weeks
+}
+
 /** Sorted, unique years that have at least one logged completion. */
 export function yearsWithData(log: DailyLog): number[] {
   const years = new Set<number>()

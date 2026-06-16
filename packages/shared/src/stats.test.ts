@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import type { DailyCompletionDTO } from './sync'
 import type { DailyLog } from './types'
 import { addDays, todayKey } from './dates'
-import { buildHeatmap, buildYearGrid, computeStats, computeStreaks, intensity, yearsWithData } from './stats'
+import { buildHeatmap, buildMonthGrid, buildWeekGrid, buildYearGrid, computeStats, computeStreaks, intensity, yearsWithData } from './stats'
 
 /** Build a completion on a given date key. */
 function comp(dateKey: string, deleted = false): DailyCompletionDTO {
@@ -120,4 +120,28 @@ test('yearsWithData returns sorted unique years that have completions', () => {
     '2025-09-09': [], // empty -> ignored
   }
   assert.deepEqual(yearsWithData(log), [2024, 2025, 2026])
+})
+
+test('buildWeekGrid returns 7 Sun..Sat cells around the anchor', () => {
+  const log: DailyLog = { '2026-06-16': ['h1'] } // Tue Jun 16 2026
+  const wk = buildWeekGrid(log, '2026-06-16')
+  assert.equal(wk.length, 7)
+  assert.equal(wk[0].key, '2026-06-14') // Sunday
+  assert.equal(wk[6].key, '2026-06-20') // Saturday
+  assert.equal(wk[2].key, '2026-06-16')
+  assert.equal(wk[2].count, 1)
+})
+
+test('buildMonthGrid pads to full Sun..Sat weeks', () => {
+  // Feb 2026 starts on a Sunday, 28 days -> exactly 4 weeks, no padding
+  const feb = buildMonthGrid({}, 2026, 1)
+  assert.equal(feb.length, 4)
+  assert.equal(feb[0][0].key, '2026-02-01')
+  assert.equal(feb[3][6].key, '2026-02-28')
+  // Jan 2026 starts on Thursday (dow=4) -> 4 leading null pads
+  const jan = buildMonthGrid({ '2026-01-01': ['h1'] }, 2026, 0)
+  assert.equal(jan[0][0].key, null)
+  assert.equal(jan[0][3].key, null)
+  assert.equal(jan[0][4].key, '2026-01-01')
+  assert.equal(jan[0][4].count, 1)
 })
