@@ -215,6 +215,7 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const selectGoal = useStore((s) => s.selectGoal)
   const allHabits = useStore((s) => s.dailyTasks)
   const completions = useStore((s) => s.dailyCompletions)
+  const updateGoal = useStore((s) => s.updateGoal)
   const addMilestone = useStore((s) => s.addMilestone)
   const toggleTask = useStore((s) => s.toggleTask)
   const updateTask = useStore((s) => s.updateTask)
@@ -235,6 +236,15 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const [progressDraft, setProgressDraft] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState('')
+
+  function commitTitle() {
+    if (titleDraft.trim() && titleDraft.trim() !== goal.title) {
+      updateGoal(goal.id, { title: titleDraft.trim() })
+    }
+    setEditingTitle(false)
+  }
 
   const todayStr = todayKey()
   const doneToday = useMemo(() => {
@@ -282,7 +292,30 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
           <span className="absolute text-lg font-bold text-slate-100">{progress.percent}%</span>
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-white">{goal.title}</h1>
+          {editingTitle ? (
+            <input
+              autoFocus
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitTitle()
+                if (e.key === 'Escape') setEditingTitle(false)
+              }}
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-2xl font-bold text-white outline-none focus:border-accent"
+            />
+          ) : (
+            <h1
+              className="cursor-text text-2xl font-bold text-white"
+              title="Click to rename goal"
+              onClick={() => {
+                setTitleDraft(goal.title)
+                setEditingTitle(true)
+              }}
+            >
+              {goal.title}
+            </h1>
+          )}
           {goal.why && <p className="mt-0.5 text-sm text-slate-400">{goal.why}</p>}
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <span className={`rounded-full px-2 py-0.5 font-medium ${PACE[pace].cls}`}>{PACE[pace].label}</span>

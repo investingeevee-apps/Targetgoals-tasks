@@ -255,6 +255,7 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const lists = useStore((s) => s.lists)
   const addList = useStore((s) => s.addList)
   const completions = useStore((s) => s.dailyCompletions)
+  const updateGoal = useStore((s) => s.updateGoal)
   const addMilestone = useStore((s) => s.addMilestone)
   const toggleTask = useStore((s) => s.toggleTask)
   const updateTask = useStore((s) => s.updateTask)
@@ -274,6 +275,16 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const [habitDraft, setHabitDraft] = useState('')
   const [progressDraft, setProgressDraft] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
+  const [titleEditing, setTitleEditing] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(goal.title)
+  const titleCommitted = useRef(false)
+
+  function commitTitle(v: string) {
+    if (titleCommitted.current) return
+    titleCommitted.current = true
+    if (v.trim() && v.trim() !== goal.title) updateGoal(goal.id, { title: v.trim() })
+    setTitleEditing(false)
+  }
 
   const todayStr = todayKey()
   const doneToday = useMemo(() => {
@@ -313,7 +324,27 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
         <Text style={styles.back}>← All goals</Text>
       </Pressable>
 
-      <Text style={styles.h1}>{goal.title}</Text>
+      {titleEditing ? (
+        <TextInput
+          style={styles.titleInput}
+          value={titleDraft}
+          onChangeText={setTitleDraft}
+          autoFocus
+          returnKeyType="done"
+          onSubmitEditing={() => commitTitle(titleDraft)}
+          onBlur={() => commitTitle(titleDraft)}
+        />
+      ) : (
+        <Pressable
+          onPress={() => {
+            setTitleDraft(goal.title)
+            titleCommitted.current = false
+            setTitleEditing(true)
+          }}
+        >
+          <Text style={styles.h1}>{goal.title}</Text>
+        </Pressable>
+      )}
       {goal.why ? <Text style={styles.why}>{goal.why}</Text> : null}
 
       <View style={styles.detailPctRow}>
@@ -526,6 +557,10 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 48 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   h1: { color: '#fff', fontSize: 24, fontWeight: '800' },
+  titleInput: {
+    color: '#fff', fontSize: 24, fontWeight: '800',
+    borderBottomWidth: 1, borderBottomColor: colors.accent, paddingVertical: 2,
+  },
   why: { color: colors.textDim, fontSize: 14, marginTop: 2 },
   back: { color: colors.textDim, fontSize: 14, marginBottom: 12 },
   barTrack: { height: 8, borderRadius: 999, backgroundColor: colors.surfaceAlt, overflow: 'hidden' },

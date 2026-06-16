@@ -5,6 +5,7 @@ import { buildDailyLog } from '../lib/transform'
 import { useTodayKey } from '../lib/useTodayKey'
 import { CheckCircle, Circle, Flame, Pencil, Plus, Repeat, Trash } from './Icons'
 import { GripHandle, SortableList, SortableRow } from './Sortable'
+import { GoalChip } from './GoalChip'
 
 export function DailyScreen() {
   const allDailyTasks = useStore((s) => s.dailyTasks)
@@ -215,20 +216,27 @@ export function DailyScreen() {
                           className="flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-white outline-none focus:border-accent"
                         />
                       ) : (
-                        <button
-                          className="flex-1 text-left"
-                          onClick={() => {
-                            setEditDraft(d.title)
-                            setEditingId(d.id)
-                          }}
-                          title="Click to rename"
-                        >
-                          <span
-                            className={`text-sm ${done ? 'text-slate-500 line-through' : 'text-slate-100'}`}
+                        <div className="min-w-0 flex-1">
+                          <button
+                            className="block text-left"
+                            onClick={() => {
+                              setEditDraft(d.title)
+                              setEditingId(d.id)
+                            }}
+                            title="Click to rename"
                           >
-                            {d.title}
-                          </span>
-                        </button>
+                            <span
+                              className={`text-sm ${done ? 'text-slate-500 line-through' : 'text-slate-100'}`}
+                            >
+                              {d.title}
+                            </span>
+                          </button>
+                          {d.goalId && (
+                            <div className="mt-0.5">
+                              <GoalChip goalId={d.goalId} />
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       {editingId !== d.id && (

@@ -23,11 +23,13 @@ export function DailyScreen() {
   const allTasks = useStore((s) => s.tasks)
   const scheduledCompletions = useStore((s) => s.scheduledCompletions)
   const lists = useStore((s) => s.lists)
+  const goals = useStore((s) => s.goals)
   const toggleScheduledToday = useStore((s) => s.toggleScheduledToday)
   const scheduleTask = useStore((s) => s.scheduleTask)
   const setScreen = useStore((s) => s.setScreen)
   const selectTask = useStore((s) => s.selectTask)
   const selectList = useStore((s) => s.selectList)
+  const selectGoal = useStore((s) => s.selectGoal)
 
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -73,6 +75,10 @@ export function DailyScreen() {
     const m = new Map(lists.map((l) => [l.id, l.name]))
     return (id: string) => m.get(id) ?? 'Tasks'
   }, [lists])
+  const goalName = useMemo(() => {
+    const m = new Map(goals.filter((g) => !g.deleted).map((g) => [g.id, g.title]))
+    return (id?: string | null) => (id ? m.get(id) ?? null : null)
+  }, [goals])
 
   function openTask(listId: string, taskId: string) {
     selectList(listId)
@@ -186,7 +192,20 @@ export function DailyScreen() {
                 onBlur={commitRename}
               />
             ) : (
-              <Text style={[styles.taskTitle, done && styles.taskTitleDone]}>{d.title}</Text>
+              <View style={styles.titleCol}>
+                <Text style={[styles.habitTitle, done && styles.taskTitleDone]}>{d.title}</Text>
+                {goalName(d.goalId) ? (
+                  <Pressable
+                    style={styles.goalChip}
+                    onPress={() => d.goalId && selectGoal(d.goalId)}
+                    hitSlop={4}
+                  >
+                    <Text style={styles.goalChipText} numberOfLines={1}>
+                      ◎ {goalName(d.goalId)}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
             )}
 
             {editing ? (
@@ -256,6 +275,13 @@ const styles = StyleSheet.create({
   checkDone: { backgroundColor: colors.accent, borderColor: colors.accent },
   checkMark: { color: '#fff', fontSize: 14, fontWeight: '900', lineHeight: 16 },
   taskTitle: { flex: 1, color: colors.text, fontSize: 15 },
+  titleCol: { flex: 1 },
+  habitTitle: { color: colors.text, fontSize: 15 },
+  goalChip: {
+    alignSelf: 'flex-start', marginTop: 3, backgroundColor: 'rgba(30,132,227,0.12)',
+    borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, maxWidth: '100%',
+  },
+  goalChipText: { color: colors.accent, fontSize: 11, fontWeight: '600' },
   taskTitleDone: { color: colors.textFaint, textDecorationLine: 'line-through' },
   editInput: {
     flex: 1,
