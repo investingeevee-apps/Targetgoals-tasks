@@ -1,16 +1,20 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import {
-  buildHeatmap,
+  buildYearGrid,
   computeGoalProgress,
   computeStats,
   computeStreaks,
   formatLongDate,
   intensity,
+  yearsWithData,
 } from '@targetgoals/shared'
 import { useStore } from '../store'
 import { buildDailyLog } from '../lib/transform'
 import { colors, heatLevels } from '../theme'
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const GUTTER_DAYS = new Set([1, 5, 10, 15, 20, 25, 31])
 
 function GoalsOverview() {
   const goals = useStore((s) => s.goals)
@@ -76,7 +80,6 @@ export function OverviewScreen() {
     () => computeStreaks(dailyTasks, completions),
     [dailyTasks, completions],
   )
-  const columns = useMemo(() => buildHeatmap(dailyLog, 16), [dailyLog])
   const max = useMemo(() => {
     let m = 0
     for (const k of Object.keys(dailyLog)) m = Math.max(m, dailyLog[k].length)
@@ -85,6 +88,13 @@ export function OverviewScreen() {
   const activeHabits = dailyTasks.filter((d) => !d.deleted && !d.archived).length
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+  const currentYear = today.getFullYear()
+  const dataYears = useMemo(() => yearsWithData(dailyLog), [dailyLog])
+  const minYear = Math.min(currentYear, dataYears[0] ?? currentYear)
+  const maxYear = Math.max(currentYear, dataYears[dataYears.length - 1] ?? currentYear)
+  const [year, setYear] = useState(currentYear)
+  const yearGrid = useMemo(() => buildYearGrid(dailyLog, year), [dailyLog, year])
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -112,20 +122,41 @@ export function OverviewScreen() {
 
       <View style={styles.heatCard}>
         <Text style={styles.heatTitle}>Completion activity</Text>
+
+        <View style={styles.yearNav}>
+          <Pressable disabled={year <= minYear} onPress={() => setYear((y) => Math.max(minYear, y - 1))} hitSlop={10}>
+            <Text style={[styles.navArrow, year <= minYear && styles.navArrowOff]}>‹</Text>
+          </Pressable>
+          <Text style={styles.yearLabel}>{year}</Text>
+          <Pressable disabled={year >= maxYear} onPress={() => setYear((y) => Math.min(maxYear, y + 1))} hitSlop={10}>
+            <Text style={[styles.navArrow, year >= maxYear && styles.navArrowOff]}>›</Text>
+          </Pressable>
+        </View>
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.heatGrid}>
-            {columns.map((col, ci) => (
-              <View key={ci} style={styles.heatCol}>
-                {col.map((day) => {
-                  const future = day.key > todayStr
-                  const lvl = intensity(day.count, max)
+          <View style={styles.yearGridRow}>
+            {/* day-number gutter */}
+            <View style={styles.gutterCol}>
+              <View style={styles.monthLabelSpacer} />
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                <View key={d} style={styles.gutterRow}>
+                  <Text style={styles.gutterText}>{GUTTER_DAYS.has(d) ? d : ''}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* month columns */}
+            {yearGrid.map((cells, mi) => (
+              <View key={mi} style={styles.monthCol}>
+                <Text style={styles.monthLabel}>{MONTHS[mi]}</Text>
+                {cells.map((cell, di) => {
+                  if (cell.key === null) return <View key={di} style={styles.ycellEmpty} />
+                  const future = cell.key > todayStr
+                  const lvl = intensity(cell.count, max)
                   return (
                     <View
-                      key={day.key}
-                      style={[
-                        styles.heatCell,
-                        { backgroundColor: future ? 'transparent' : heatLevels[lvl] },
-                      ]}
+                      key={cell.key}
+                      style={[styles.ycell, { backgroundColor: future ? 'transparent' : heatLevels[lvl] }]}
                     />
                   )
                 })}
@@ -133,6 +164,7 @@ export function OverviewScreen() {
             ))}
           </View>
         </ScrollView>
+
         <View style={styles.legendRow}>
           <Text style={styles.legendText}>Less</Text>
           {heatLevels.map((c, i) => (
@@ -173,9 +205,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface, borderRadius: 16, padding: 16,
   },
   heatTitle: { color: colors.text, fontWeight: '700', fontSize: 14, marginBottom: 12 },
-  heatGrid: { flexDirection: 'row', gap: 4 },
-  heatCol: { gap: 4 },
   heatCell: { width: 13, height: 13, borderRadius: 3 },
+  yearNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 12 },
+  navArrow: { color: colors.textDim, fontSize: 22, fontWeight: '700', paddingHorizontal: 8 },
+  navArrowOff: { opacity: 0.3 },
+  yearLabel: { color: colors.text, fontSize: 14, fontWeight: '700', minWidth: 48, textAlign: 'center' },
+  yearGridRow: { flexDirection: 'row' },
+  gutterCol: { alignItems: 'flex-end', marginRight: 4 },
+  monthLabelSpacer: { height: 13, marginBottom: 3 },
+  gutterRow: { height: 11, marginBottom: 3, justifyContent: 'center' },
+  gutterText: { color: colors.textFaint, fontSize: 8, lineHeight: 11 },
+  monthCol: { alignItems: 'center', marginRight: 3 },
+  monthLabel: { color: colors.textFaint, fontSize: 9, height: 13, lineHeight: 13, marginBottom: 3 },
+  ycell: { width: 11, height: 11, borderRadius: 3, marginBottom: 3 },
+  ycellEmpty: { width: 11, height: 11, marginBottom: 3 },
   legendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5, marginTop: 12 },
   legendText: { color: colors.textFaint, fontSize: 10 },
 })

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import type { DailyCompletionDTO } from './sync'
 import type { DailyLog } from './types'
 import { addDays, todayKey } from './dates'
-import { buildHeatmap, computeStats, computeStreaks, intensity } from './stats'
+import { buildHeatmap, buildYearGrid, computeStats, computeStreaks, intensity, yearsWithData } from './stats'
 
 /** Build a completion on a given date key. */
 function comp(dateKey: string, deleted = false): DailyCompletionDTO {
@@ -84,4 +84,40 @@ test('intensity buckets', () => {
   assert.equal(intensity(1, 1), 4)
   assert.equal(intensity(4, 4), 4)
   assert.equal(intensity(1, 4), 1)
+})
+
+test('buildYearGrid lays out 12 months x 31 days with valid/null cells', () => {
+  const log: DailyLog = { '2026-01-01': ['h1', 'h2'], '2026-03-15': ['h1'] }
+  const grid = buildYearGrid(log, 2026)
+  assert.equal(grid.length, 12)
+  assert.equal(grid[0].length, 31)
+  // Jan 1 has two completions
+  assert.equal(grid[0][0].key, '2026-01-01')
+  assert.equal(grid[0][0].count, 2)
+  // Mar 15
+  assert.equal(grid[2][14].key, '2026-03-15')
+  assert.equal(grid[2][14].count, 1)
+  // Feb (index 1) day 30 & 31 don't exist -> null (2026 is not a leap year, 28 days)
+  assert.equal(grid[1][27].key, '2026-02-28')
+  assert.equal(grid[1][28].key, null)
+  assert.equal(grid[1][30].key, null)
+  // Apr (index 3) has 30 days -> day 31 null
+  assert.equal(grid[3][30].key, null)
+  assert.equal(grid[3][29].key, '2026-04-30')
+})
+
+test('buildYearGrid honors leap year February', () => {
+  const grid = buildYearGrid({}, 2024) // leap year
+  assert.equal(grid[1][28].key, '2024-02-29') // Feb 29 exists
+  assert.equal(grid[1][29].key, null) // Feb 30 doesn't
+})
+
+test('yearsWithData returns sorted unique years that have completions', () => {
+  const log: DailyLog = {
+    '2024-12-31': ['h1'],
+    '2025-06-01': ['h1'],
+    '2026-01-01': ['h1'],
+    '2025-09-09': [], // empty -> ignored
+  }
+  assert.deepEqual(yearsWithData(log), [2024, 2025, 2026])
 })

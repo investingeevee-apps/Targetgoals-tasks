@@ -140,6 +140,44 @@ export function buildHeatmap(log: DailyLog, weeks = 18): HeatmapDay[][] {
   return columns
 }
 
+export interface YearCell {
+  /** Local date key, or null for a day that doesn't exist in the month (e.g. Feb 30). */
+  key: string | null
+  count: number
+}
+
+/**
+ * Calendar-board grid for a single year: 12 month-columns, each a column of 31
+ * day-rows (day 1 at index 0 … day 31 at index 30). Days that don't exist in a
+ * month (Feb 30/31, Apr 31, …) get `key: null` so the caller can render a gap.
+ */
+export function buildYearGrid(log: DailyLog, year: number): YearCell[][] {
+  const months: YearCell[][] = []
+  for (let m = 0; m < 12; m++) {
+    const daysInMonth = new Date(year, m + 1, 0).getDate()
+    const col: YearCell[] = []
+    for (let d = 1; d <= 31; d++) {
+      if (d > daysInMonth) {
+        col.push({ key: null, count: 0 })
+        continue
+      }
+      const key = `${year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      col.push({ key, count: log[key]?.length ?? 0 })
+    }
+    months.push(col)
+  }
+  return months
+}
+
+/** Sorted, unique years that have at least one logged completion. */
+export function yearsWithData(log: DailyLog): number[] {
+  const years = new Set<number>()
+  for (const k of Object.keys(log)) {
+    if (log[k] && log[k].length > 0) years.add(Number(k.slice(0, 4)))
+  }
+  return [...years].sort((a, b) => a - b)
+}
+
 /** Map a completion count to one of five intensity buckets (0–4). */
 export function intensity(count: number, max: number): number {
   if (count <= 0) return 0
