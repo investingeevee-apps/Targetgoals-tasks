@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useStore } from '../store'
 import type { GoalDTO, GoalProgressMode, Pace } from '@targetgoals/shared'
 import {
@@ -238,11 +238,20 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
   const [editDraft, setEditDraft] = useState('')
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
+  // Guards against Enter→blur firing the commit twice, and lets Escape cancel
+  // (Escape unmounts the input, whose blur would otherwise commit the draft).
+  const titleCommitted = useRef(false)
 
   function commitTitle() {
+    if (titleCommitted.current) return
+    titleCommitted.current = true
     if (titleDraft.trim() && titleDraft.trim() !== goal.title) {
       updateGoal(goal.id, { title: titleDraft.trim() })
     }
+    setEditingTitle(false)
+  }
+  function cancelTitle() {
+    titleCommitted.current = true // block the impending blur from committing
     setEditingTitle(false)
   }
 
@@ -300,7 +309,7 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
               onBlur={commitTitle}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitTitle()
-                if (e.key === 'Escape') setEditingTitle(false)
+                if (e.key === 'Escape') cancelTitle()
               }}
               className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-2xl font-bold text-white outline-none focus:border-accent"
             />
@@ -310,6 +319,7 @@ function GoalDetail({ goal, onBack }: { goal: GoalDTO; onBack: () => void }) {
               title="Click to rename goal"
               onClick={() => {
                 setTitleDraft(goal.title)
+                titleCommitted.current = false
                 setEditingTitle(true)
               }}
             >

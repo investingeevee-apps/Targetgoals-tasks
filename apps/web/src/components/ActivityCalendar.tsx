@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { DailyLog } from '@targetgoals/shared'
 import {
   buildMonthGrid,
@@ -96,6 +96,8 @@ function YearView({ log, today, max }: ViewProps) {
   const minYear = Math.min(currentYear, dataYears[0] ?? currentYear)
   const maxYear = Math.max(currentYear, dataYears[dataYears.length - 1] ?? currentYear)
   const [year, setYear] = useState(currentYear)
+  // Follow the calendar if it rolls into a new year while this view stays mounted.
+  useEffect(() => setYear(currentYear), [currentYear])
   const grid = useMemo(() => buildYearGrid(log, year), [log, year])
 
   const navBtn =

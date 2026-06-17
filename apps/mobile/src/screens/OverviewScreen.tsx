@@ -210,7 +210,7 @@ export function OverviewScreen() {
           </Pressable>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
           <View style={styles.yearGridRow}>
             {/* day-number gutter */}
             <View style={styles.gutterCol}>
